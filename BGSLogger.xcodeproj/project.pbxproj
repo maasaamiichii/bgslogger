@@ -227,6 +227,8 @@
 		6786AE4B158F6780005ACF16 /* 97-puzzle.png in Resources */ = {isa = PBXBuildFile; fileRef = 6786AD82158F6780005ACF16 /* 97-puzzle.png */; };
 		6786AE4C158F6780005ACF16 /* 98-palette.png in Resources */ = {isa = PBXBuildFile; fileRef = 6786AD83158F6780005ACF16 /* 98-palette.png */; };
 		6786AE4D158F6780005ACF16 /* 99-umbrella.png in Resources */ = {isa = PBXBuildFile; fileRef = 6786AD84158F6780005ACF16 /* 99-umbrella.png */; };
+		6786AE50158F805E005ACF16 /* MapDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6786AE4F158F805E005ACF16 /* MapDetailViewController.m */; };
+		6786AE53158F833D005ACF16 /* CustomAnnotation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6786AE52158F833D005ACF16 /* CustomAnnotation.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -467,6 +469,10 @@
 		6786AD82158F6780005ACF16 /* 97-puzzle.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "97-puzzle.png"; sourceTree = "<group>"; };
 		6786AD83158F6780005ACF16 /* 98-palette.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "98-palette.png"; sourceTree = "<group>"; };
 		6786AD84158F6780005ACF16 /* 99-umbrella.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "99-umbrella.png"; sourceTree = "<group>"; };
+		6786AE4E158F805E005ACF16 /* MapDetailViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MapDetailViewController.h; sourceTree = "<group>"; };
+		6786AE4F158F805E005ACF16 /* MapDetailViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MapDetailViewController.m; sourceTree = "<group>"; };
+		6786AE51158F833D005ACF16 /* CustomAnnotation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomAnnotation.h; sourceTree = "<group>"; };
+		6786AE52158F833D005ACF16 /* CustomAnnotation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomAnnotation.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -535,15 +541,13 @@
 		67823D78158EFAC000C1F464 /* BGSLogger */ = {
 			isa = PBXGroup;
 			children = (
+				6786AE55158F8648005ACF16 /* BGSLogView */,
+				6786AE54158F8633005ACF16 /* MapView */,
 				67823D81158EFAC000C1F464 /* AppDelegate.h */,
 				67823D82158EFAC000C1F464 /* AppDelegate.m */,
 				67823D84158EFAC000C1F464 /* MainStoryboard_iPhone.storyboard */,
 				67823D87158EFAC000C1F464 /* MainStoryboard_iPad.storyboard */,
 				67823D79158EFAC000C1F464 /* Supporting Files */,
-				67823DB5158F114100C1F464 /* MapViewController.h */,
-				67823DB6158F114100C1F464 /* MapViewController.m */,
-				67823DB8158F114A00C1F464 /* BGSLogViewController.h */,
-				67823DB9158F114A00C1F464 /* BGSLogViewController.m */,
 			);
 			path = BGSLogger;
 			sourceTree = "<group>";
@@ -785,6 +789,28 @@
 			);
 			name = icons;
 			path = BGSLogger/icons;
+			sourceTree = "<group>";
+		};
+		6786AE54158F8633005ACF16 /* MapView */ = {
+			isa = PBXGroup;
+			children = (
+				6786AE4E158F805E005ACF16 /* MapDetailViewController.h */,
+				6786AE4F158F805E005ACF16 /* MapDetailViewController.m */,
+				6786AE51158F833D005ACF16 /* CustomAnnotation.h */,
+				6786AE52158F833D005ACF16 /* CustomAnnotation.m */,
+				67823DB5158F114100C1F464 /* MapViewController.h */,
+				67823DB6158F114100C1F464 /* MapViewController.m */,
+			);
+			name = MapView;
+			sourceTree = "<group>";
+		};
+		6786AE55158F8648005ACF16 /* BGSLogView */ = {
+			isa = PBXGroup;
+			children = (
+				67823DB8158F114A00C1F464 /* BGSLogViewController.h */,
+				67823DB9158F114A00C1F464 /* BGSLogViewController.m */,
+			);
+			name = BGSLogView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1100,6 +1126,8 @@
 				67823D83158EFAC000C1F464 /* AppDelegate.m in Sources */,
 				67823DB7158F114100C1F464 /* MapViewController.m in Sources */,
 				67823DBA158F114A00C1F464 /* BGSLogViewController.m in Sources */,
+				6786AE50158F805E005ACF16 /* MapDetailViewController.m in Sources */,
+				6786AE53158F833D005ACF16 /* CustomAnnotation.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -122,29 +122,62 @@
             </objects>
             <point key="canvasLocation" x="608" y="414"/>
         </scene>
+        <!--Navigation Controller - Item-->
+        <scene sceneID="9wt-BK-L3v">
+            <objects>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="hDk-jG-sCe" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <navigationController definesPresentationContext="YES" id="fm0-yV-xkI" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Item" id="STr-VO-BSS"/>
+                    <navigationBar key="navigationBar" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="9u7-pH-tZp">
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="3" kind="relationship" relationship="rootViewController" id="T8d-kJ-Esv"/>
+                    </connections>
+                </navigationController>
+            </objects>
+            <point key="canvasLocation" x="608" y="-172"/>
+        </scene>
         <!--Map View Controller - Second-->
         <scene sceneID="13">
             <objects>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="12" sceneMemberID="firstResponder"/>
                 <viewController title="Second" id="3" customClass="MapViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="17">
-                        <rect key="frame" x="0.0" y="20" width="320" height="411"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="367"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" id="e6x-lq-MLc">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="411"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="367"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             </mapView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <tabBarItem key="tabBarItem" title="Map" image="07-map-marker.png" id="6"/>
+                    <navigationItem key="navigationItem" id="cMW-OB-kQT"/>
                     <connections>
                         <outlet property="mapView" destination="e6x-lq-MLc" id="cJY-W3-cX7"/>
+                        <segue destination="Vcf-Qm-pUf" kind="push" id="xI0-kA-b3B"/>
                     </connections>
                 </viewController>
             </objects>
-            <point key="canvasLocation" x="608" y="-166"/>
+            <point key="canvasLocation" x="1037" y="-172"/>
+        </scene>
+        <!--mapDetail-->
+        <scene sceneID="kEX-uz-PM5">
+            <objects>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="ffa-95-2hg" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <viewController storyboardIdentifier="mapDetail" id="Vcf-Qm-pUf" userLabel="mapDetail" customClass="MapDetailViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="25n-vr-CSS">
+                        <rect key="frame" x="0.0" y="64" width="320" height="367"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="iXl-5D-rmh"/>
+                </viewController>
+            </objects>
+            <point key="canvasLocation" x="1477" y="-172"/>
         </scene>
         <!--Tab Bar Controller-->
         <scene sceneID="15">
@@ -158,8 +191,8 @@
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                     </tabBar>
                     <connections>
-                        <segue destination="3" kind="relationship" relationship="viewControllers" id="7mo-m0-RTl"/>
-                        <segue destination="2" kind="relationship" relationship="viewControllers" id="ACo-H4-CzB"/>
+                        <segue destination="fm0-yV-xkI" kind="relationship" relationship="viewControllers" id="UjU-vh-5XI"/>
+                        <segue destination="2" kind="relationship" relationship="viewControllers" id="cea-k2-kFA"/>
                     </connections>
                 </tabBarController>
             </objects>
@@ -181,6 +214,9 @@
                 <relationship kind="action" name="stopRecord:"/>
                 <relationship kind="outlet" name="currentRecordingTimeLabel" candidateClass="UILabel"/>
             </relationships>
+        </class>
+        <class className="MapDetailViewController" superclassName="UIViewController">
+            <source key="sourceIdentifier" type="project" relativePath="./Classes/MapDetailViewController.h"/>
         </class>
         <class className="MapViewController" superclassName="UIViewController">
             <source key="sourceIdentifier" type="project" relativePath="./Classes/MapViewController.h"/>

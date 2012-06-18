@@ -7,6 +7,8 @@
 //
 
 #import "MapViewController.h"
+#import "MapDetailViewController.h"
+#import "CustomAnnotation.h"
 
 @interface MapViewController ()
 
@@ -48,6 +50,27 @@
     //mapviewのデリゲート設定、現在地表示設定
     [mapView setDelegate: self];
     mapView.showsUserLocation = YES;
+    
+    [mapView addAnnotation:
+     [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake(35.685623,139.763153)
+                                                    title:@"大手町駅"
+                                                 subtitle:@"千代田線・半蔵門線・丸ノ内線・東西線・三田線"]autorelease]];
+    [mapView addAnnotation:
+     [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake(35.690747,139.756866)
+                                                    title:@"竹橋駅"
+                                                 subtitle:@"東西線"]autorelease]];
+    [mapView addAnnotation:
+     [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake(35.681666,139.764869)
+                                                    title:@"東京駅"
+                                                 subtitle:@"いっぱい"]autorelease]];
+}
+
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    //navigationbarを隠す
+    [self.navigationController setNavigationBarHidden:YES animated:NO];
+    
 }
 
 - (void)viewDidUnload
@@ -103,7 +126,6 @@
 }
 
 //アノテーションの設定
-
 -(MKAnnotationView*)mapView:(MKMapView*)mapView viewForAnnotation:(id)annotation{
     
     //現在地にはデフォルトの青色のピンを使う
@@ -131,6 +153,15 @@
     }
     
 }
+
+//ボタンをタップしたときの処理
+- (void) mapView:(MKMapView*)_mapView annotationView:(MKAnnotationView*)annotationView calloutAccessoryControlTapped:(UIControl*)control {  
+    //画面遷移
+    MapDetailViewController *mapDetailView = [self.storyboard instantiateViewControllerWithIdentifier:@"mapDetail"];
+    [self.navigationController pushViewController:mapDetailView animated:YES];
+    
+}
+
 
 
 
