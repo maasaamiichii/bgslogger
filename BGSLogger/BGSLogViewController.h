@@ -9,6 +9,8 @@
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreAudio/CoreAudioTypes.h>
+#import <CoreLocation/CoreLocation.h>
+
 
 
 @interface BGSLogViewController : UIViewController<AVAudioRecorderDelegate,AVAudioPlayerDelegate>{
@@ -16,11 +18,14 @@
     AVAudioRecorder *myRecorder;
     AVAudioPlayer *myPlayer;
     NSTimer *timer;
-    
+    NSURL *recordingURL;
 }
 
 @property (retain, nonatomic) IBOutlet UILabel *currentRecordingTimeLabel;
+@property (retain, nonatomic) IBOutlet UILabel *userLatitudeLabel;
+@property (retain, nonatomic) IBOutlet UILabel *userLongitudeLabel;
 @property (retain, nonatomic) NSTimer *timer;
+@property (retain, nonatomic) IBOutlet UILabel *stationNameLabel;
 
 - (IBAction)startRecord:(id)sender;
 - (IBAction)startPlay:(id)sender;
