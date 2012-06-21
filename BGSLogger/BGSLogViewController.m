@@ -12,12 +12,6 @@
 
 
 
-@interface BGSLogViewController()<MapViewControllerDelegate>
-
-
-@end
-
-
 @implementation BGSLogViewController
 @synthesize currentRecordingTimeLabel;
 @synthesize userLatitudeLabel;
@@ -39,11 +33,6 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view.
-    //NSLog(@"%@",stationNameLabel.text);
-    
-    //MapViewController *mapViewController = [[MapViewController alloc] init];
-    //mapViewController.delegate = self;
-   
    
     
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
@@ -103,6 +92,7 @@
     [self setUserLongitudeLabel:nil];
     [self setStationNameLabel:nil];
     [super viewDidUnload];
+    NSLog(@"unload");
     // Release any retained subviews of the main view.
 }
 
@@ -110,6 +100,10 @@
     LocationData *locationData = [LocationData sharedCenter];
     userLatitudeLabel.text = [NSString stringWithFormat:@"%f",[locationData getUserLatitude]];
     userLongitudeLabel.text = [NSString stringWithFormat:@"%f",[locationData getUserLongitude]];
+}
+
+- (void) viewWillDisappear:(BOOL)animated{
+    
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -126,6 +120,7 @@
     [myRecorder release];
     [myPlayer release];
     [timer release];
+    NSLog(@"dealloc");
 }
 
 
@@ -230,10 +225,6 @@
     myPlayer = nil;
 }
 
-/*- (void) setStationName:(NSString *)stationName{
-    NSLog(@"delegatecalled");
-    stationNameLabel.text = [NSString stringWithFormat:@"%@",stationName];
-}*/
 
 
 @end

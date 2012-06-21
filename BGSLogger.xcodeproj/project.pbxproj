@@ -24,6 +24,8 @@
 		6739EF4E1591F694007EC645 /* CustomAnnotation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF4D1591F694007EC645 /* CustomAnnotation.m */; };
 		6739EF4F1591F6B7007EC645 /* CustomAnnotation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF4D1591F694007EC645 /* CustomAnnotation.m */; };
 		6739EF551591FCE1007EC645 /* LocationData.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF541591FCE1007EC645 /* LocationData.m */; };
+		6739EF6A159298B4007EC645 /* rec.png in Resources */ = {isa = PBXBuildFile; fileRef = 6739EF69159298B2007EC645 /* rec.png */; };
+		6739EF6C1592A346007EC645 /* stop.png in Resources */ = {isa = PBXBuildFile; fileRef = 6739EF6B1592A343007EC645 /* stop.png */; };
 		67823D73158EFAC000C1F464 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823D72158EFAC000C1F464 /* UIKit.framework */; };
 		67823D75158EFAC000C1F464 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823D74158EFAC000C1F464 /* Foundation.framework */; };
 		67823D77158EFAC000C1F464 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823D76158EFAC000C1F464 /* CoreGraphics.framework */; };
@@ -284,10 +286,12 @@
 		6710791B1590F558001CD49F /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		6710791D1590F569001CD49F /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		671079231590F5D2001CD49F /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
-		6739EF4C1591F694007EC645 /* CustomAnnotation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CustomAnnotation.h; path = BGSLogger/CustomAnnotation.h; sourceTree = "<group>"; };
-		6739EF4D1591F694007EC645 /* CustomAnnotation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CustomAnnotation.m; path = BGSLogger/CustomAnnotation.m; sourceTree = "<group>"; };
+		6739EF4C1591F694007EC645 /* CustomAnnotation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomAnnotation.h; sourceTree = "<group>"; };
+		6739EF4D1591F694007EC645 /* CustomAnnotation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomAnnotation.m; sourceTree = "<group>"; };
 		6739EF531591FCE1007EC645 /* LocationData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocationData.h; sourceTree = "<group>"; };
 		6739EF541591FCE1007EC645 /* LocationData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocationData.m; sourceTree = "<group>"; };
+		6739EF69159298B2007EC645 /* rec.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rec.png; sourceTree = "<group>"; };
+		6739EF6B1592A343007EC645 /* stop.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = stop.png; sourceTree = "<group>"; };
 		67823D6E158EFAC000C1F464 /* BGSLogger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BGSLogger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		67823D72158EFAC000C1F464 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		67823D74158EFAC000C1F464 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -580,11 +584,29 @@
 			path = BGSLogger/HttpClass;
 			sourceTree = "<group>";
 		};
+		6739EF5E159265DC007EC645 /* MapView */ = {
+			isa = PBXGroup;
+			children = (
+				67823DB8158F114A00C1F464 /* BGSLogViewController.h */,
+				67823DB9158F114A00C1F464 /* BGSLogViewController.m */,
+				67823DB5158F114100C1F464 /* MapViewController.h */,
+				67823DB6158F114100C1F464 /* MapViewController.m */,
+			);
+			name = MapView;
+			sourceTree = "<group>";
+		};
+		6739EF60159265EF007EC645 /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				6739EF531591FCE1007EC645 /* LocationData.h */,
+				6739EF541591FCE1007EC645 /* LocationData.m */,
+			);
+			name = Util;
+			sourceTree = "<group>";
+		};
 		67823D63158EFAC000C1F464 = {
 			isa = PBXGroup;
 			children = (
-				6739EF4C1591F694007EC645 /* CustomAnnotation.h */,
-				6739EF4D1591F694007EC645 /* CustomAnnotation.m */,
 				6710789A1590F4CB001CD49F /* HttpClass */,
 				6786ACBB158F6780005ACF16 /* icons */,
 				67823D78158EFAC000C1F464 /* BGSLogger */,
@@ -626,14 +648,12 @@
 		67823D78158EFAC000C1F464 /* BGSLogger */ = {
 			isa = PBXGroup;
 			children = (
-				67823DB8158F114A00C1F464 /* BGSLogViewController.h */,
-				67823DB9158F114A00C1F464 /* BGSLogViewController.m */,
-				67823DB5158F114100C1F464 /* MapViewController.h */,
-				67823DB6158F114100C1F464 /* MapViewController.m */,
+				6739EF4C1591F694007EC645 /* CustomAnnotation.h */,
+				6739EF4D1591F694007EC645 /* CustomAnnotation.m */,
+				6739EF60159265EF007EC645 /* Util */,
+				6739EF5E159265DC007EC645 /* MapView */,
 				67823D81158EFAC000C1F464 /* AppDelegate.h */,
 				67823D82158EFAC000C1F464 /* AppDelegate.m */,
-				6739EF531591FCE1007EC645 /* LocationData.h */,
-				6739EF541591FCE1007EC645 /* LocationData.m */,
 				67823D84158EFAC000C1F464 /* MainStoryboard_iPhone.storyboard */,
 				67823D87158EFAC000C1F464 /* MainStoryboard_iPad.storyboard */,
 				67823D79158EFAC000C1F464 /* Supporting Files */,
@@ -674,6 +694,8 @@
 		6786ACBB158F6780005ACF16 /* icons */ = {
 			isa = PBXGroup;
 			children = (
+				6739EF6B1592A343007EC645 /* stop.png */,
+				6739EF69159298B2007EC645 /* rec.png */,
 				6786ACBC158F6780005ACF16 /* 00-Read me first - license.txt */,
 				6786ACBD158F6780005ACF16 /* 01-refresh.png */,
 				6786ACBE158F6780005ACF16 /* 02-redo.png */,
@@ -1155,6 +1177,8 @@
 				6786AE4B158F6780005ACF16 /* 97-puzzle.png in Resources */,
 				6786AE4C158F6780005ACF16 /* 98-palette.png in Resources */,
 				6786AE4D158F6780005ACF16 /* 99-umbrella.png in Resources */,
+				6739EF6A159298B4007EC645 /* rec.png in Resources */,
+				6739EF6C1592A346007EC645 /* stop.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

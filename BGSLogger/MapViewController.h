@@ -9,32 +9,35 @@
 #import <UIKit/UIKit.h>
 #import <MapKit/MapKit.h>
 #import <CoreLocation/CoreLocation.h>
+#import <AVFoundation/AVFoundation.h>
+#import <CoreAudio/CoreAudioTypes.h>
 
-@protocol MapViewControllerDelegate;
 
-@interface MapViewController : UIViewController<CLLocationManagerDelegate,MKMapViewDelegate> {
+@interface MapViewController : UIViewController<CLLocationManagerDelegate,MKMapViewDelegate,UIAlertViewDelegate,AVAudioRecorderDelegate,AVAudioPlayerDelegate> {
     CLLocationManager *locationManager;
     MKMapView *mapView;
     
-    id<MapViewControllerDelegate> delegate;
-    
+    AVAudioRecorder *myRecorder;
+    AVAudioPlayer *myPlayer;
+    NSTimer *timer;
+    NSURL *recordingURL;
+    UIButton *accessoryBtn;
             
 }
 
 @property (nonatomic, retain) CLLocationManager *locationManager;
+@property (retain, nonatomic) NSTimer *timer;
 @property (retain, nonatomic) IBOutlet MKMapView *mapView;
-@property (retain, nonatomic) id<MapViewControllerDelegate> delegate;
 - (IBAction)nextPlace:(id)sender;
 
 
 -(void) onResume;
 -(void) onPause;
+- (void) startTimer;
+- (void) stopTimer;
+- (void) displayCurrentRecordingTime;
 
 @end
 
-@protocol MapViewControllerDelegate <NSObject>
 
--(void)setStationName:(NSString *)stationName;
-
-@end
 
