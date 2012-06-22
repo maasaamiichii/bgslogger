@@ -26,6 +26,8 @@
 		6739EF551591FCE1007EC645 /* LocationData.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF541591FCE1007EC645 /* LocationData.m */; };
 		6739EF6A159298B4007EC645 /* rec.png in Resources */ = {isa = PBXBuildFile; fileRef = 6739EF69159298B2007EC645 /* rec.png */; };
 		6739EF6C1592A346007EC645 /* stop.png in Resources */ = {isa = PBXBuildFile; fileRef = 6739EF6B1592A343007EC645 /* stop.png */; };
+		6739EF8015942131007EC645 /* LogMapViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF7F15942131007EC645 /* LogMapViewController.m */; };
+		6739EF9E159461CE007EC645 /* UserLogData.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF9D159461CE007EC645 /* UserLogData.m */; };
 		67823D73158EFAC000C1F464 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823D72158EFAC000C1F464 /* UIKit.framework */; };
 		67823D75158EFAC000C1F464 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823D74158EFAC000C1F464 /* Foundation.framework */; };
 		67823D77158EFAC000C1F464 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823D76158EFAC000C1F464 /* CoreGraphics.framework */; };
@@ -40,7 +42,6 @@
 		67823DA9158EFAC100C1F464 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 67823DA7158EFAC100C1F464 /* InfoPlist.strings */; };
 		67823DAC158EFAC100C1F464 /* BGSLoggerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 67823DAB158EFAC100C1F464 /* BGSLoggerTests.m */; };
 		67823DB7158F114100C1F464 /* MapViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 67823DB6158F114100C1F464 /* MapViewController.m */; };
-		67823DBA158F114A00C1F464 /* BGSLogViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 67823DB9158F114A00C1F464 /* BGSLogViewController.m */; };
 		67823DBC158F21B800C1F464 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823DBB158F21B800C1F464 /* AVFoundation.framework */; };
 		67823DBE158F21BE00C1F464 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823DBD158F21BE00C1F464 /* CoreAudio.framework */; };
 		67823DC0158F2A0600C1F464 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67823DBF158F2A0600C1F464 /* MapKit.framework */; };
@@ -292,6 +293,10 @@
 		6739EF541591FCE1007EC645 /* LocationData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocationData.m; sourceTree = "<group>"; };
 		6739EF69159298B2007EC645 /* rec.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rec.png; sourceTree = "<group>"; };
 		6739EF6B1592A343007EC645 /* stop.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = stop.png; sourceTree = "<group>"; };
+		6739EF7E15942131007EC645 /* LogMapViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LogMapViewController.h; sourceTree = "<group>"; };
+		6739EF7F15942131007EC645 /* LogMapViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LogMapViewController.m; sourceTree = "<group>"; };
+		6739EF9C159461CE007EC645 /* UserLogData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserLogData.h; sourceTree = "<group>"; };
+		6739EF9D159461CE007EC645 /* UserLogData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserLogData.m; sourceTree = "<group>"; };
 		67823D6E158EFAC000C1F464 /* BGSLogger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BGSLogger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		67823D72158EFAC000C1F464 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		67823D74158EFAC000C1F464 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -312,8 +317,6 @@
 		67823DAB158EFAC100C1F464 /* BGSLoggerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BGSLoggerTests.m; sourceTree = "<group>"; };
 		67823DB5158F114100C1F464 /* MapViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MapViewController.h; sourceTree = "<group>"; };
 		67823DB6158F114100C1F464 /* MapViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MapViewController.m; sourceTree = "<group>"; };
-		67823DB8158F114A00C1F464 /* BGSLogViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGSLogViewController.h; sourceTree = "<group>"; };
-		67823DB9158F114A00C1F464 /* BGSLogViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BGSLogViewController.m; sourceTree = "<group>"; };
 		67823DBB158F21B800C1F464 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		67823DBD158F21BE00C1F464 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		67823DBF158F2A0600C1F464 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
@@ -587,8 +590,8 @@
 		6739EF5E159265DC007EC645 /* MapView */ = {
 			isa = PBXGroup;
 			children = (
-				67823DB8158F114A00C1F464 /* BGSLogViewController.h */,
-				67823DB9158F114A00C1F464 /* BGSLogViewController.m */,
+				6739EF4C1591F694007EC645 /* CustomAnnotation.h */,
+				6739EF4D1591F694007EC645 /* CustomAnnotation.m */,
 				67823DB5158F114100C1F464 /* MapViewController.h */,
 				67823DB6158F114100C1F464 /* MapViewController.m */,
 			);
@@ -600,8 +603,19 @@
 			children = (
 				6739EF531591FCE1007EC645 /* LocationData.h */,
 				6739EF541591FCE1007EC645 /* LocationData.m */,
+				6739EF9C159461CE007EC645 /* UserLogData.h */,
+				6739EF9D159461CE007EC645 /* UserLogData.m */,
 			);
 			name = Util;
+			sourceTree = "<group>";
+		};
+		6739EF7C1594211A007EC645 /* LogView */ = {
+			isa = PBXGroup;
+			children = (
+				6739EF7E15942131007EC645 /* LogMapViewController.h */,
+				6739EF7F15942131007EC645 /* LogMapViewController.m */,
+			);
+			name = LogView;
 			sourceTree = "<group>";
 		};
 		67823D63158EFAC000C1F464 = {
@@ -648,8 +662,7 @@
 		67823D78158EFAC000C1F464 /* BGSLogger */ = {
 			isa = PBXGroup;
 			children = (
-				6739EF4C1591F694007EC645 /* CustomAnnotation.h */,
-				6739EF4D1591F694007EC645 /* CustomAnnotation.m */,
+				6739EF7C1594211A007EC645 /* LogView */,
 				6739EF60159265EF007EC645 /* Util */,
 				6739EF5E159265DC007EC645 /* MapView */,
 				67823D81158EFAC000C1F464 /* AppDelegate.h */,
@@ -1217,7 +1230,6 @@
 				67823D7F158EFAC000C1F464 /* main.m in Sources */,
 				67823D83158EFAC000C1F464 /* AppDelegate.m in Sources */,
 				67823DB7158F114100C1F464 /* MapViewController.m in Sources */,
-				67823DBA158F114A00C1F464 /* BGSLogViewController.m in Sources */,
 				671078EF1590F4CB001CD49F /* ASIAuthenticationDialog.m in Sources */,
 				671078F01590F4CB001CD49F /* ASIDataCompressor.m in Sources */,
 				671078F11590F4CB001CD49F /* ASIDataDecompressor.m in Sources */,
@@ -1228,6 +1240,8 @@
 				671078F61590F4CB001CD49F /* ASINetworkQueue.m in Sources */,
 				671078FF1590F4CB001CD49F /* Reachability.m in Sources */,
 				6739EF551591FCE1007EC645 /* LocationData.m in Sources */,
+				6739EF8015942131007EC645 /* LogMapViewController.m in Sources */,
+				6739EF9E159461CE007EC645 /* UserLogData.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

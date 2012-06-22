@@ -9,6 +9,7 @@
 #import "LocationData.h"
 
 @implementation LocationData
+@synthesize nearStations;
 
 static LocationData* sharedInstance = nil;
 
@@ -57,13 +58,14 @@ static LocationData* sharedInstance = nil;
     _userLatitude = userLatitude;
 }
 
+-(double)getUserLatitude{
+    return _userLatitude;
+}
+
+
 //ユーザの経度をセット
 -(void)setUserLongitude:(double)userLongitude{
     _userLongitude = userLongitude;
-}
-
--(double)getUserLatitude{
-    return _userLatitude;
 }
 
 -(double)getUserLongitude{
@@ -71,14 +73,53 @@ static LocationData* sharedInstance = nil;
 }
 
 
--(void)setFromStationName:(NSString *)fromStatinName{
-    _fromStationName = fromStatinName;
+-(void)setFromLat:(double)from_lat{
+    _from_lat = from_lat;
 }
 
--(NSString *)getFromStationName{
-    return _fromStationName;
+-(double)getFromLat{
+    return _from_lat;
 }
 
+-(void)setFromLon:(double)from_lon{
+    _from_lon = from_lon;
+}
+
+-(double)getFromLon{
+    return _from_lon;
+}
+
+-(void)setToLat:(double)to_lat{
+    _to_lat = to_lat;
+}
+
+-(double)getToLat{
+    return _to_lat;
+}
+
+-(void)setToLon:(double)to_lon{
+    _to_lon = to_lon;
+}
+
+-(double)getToLon{
+    return _to_lon;
+}
+
+-(void)setFromName:(NSString *)from_name{
+    _from_name = from_name;
+}
+
+-(NSString *)getFromName{
+    return _from_name;
+}
+
+-(void)setToName:(NSString *)to_name{
+    _to_name = to_name;
+}
+
+-(NSString *)getToName{
+    return _to_name;
+}
 
 
 @end
