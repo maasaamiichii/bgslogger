@@ -23,5 +23,6 @@
                            title:(NSString *)_annotationTitle subtitle:(NSString *)_annotationannSubtitle;
 - (NSString *)title;
 - (NSString *)subtitle;
+- (void)changeCoordinate:(CLLocationCoordinate2D)_coordinate;
 
 @end

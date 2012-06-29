@@ -40,6 +40,11 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="Map" image="07-map-marker.png" id="6"/>
                     <navigationItem key="navigationItem" title="BGSLogger" id="cMW-OB-kQT">
+                        <barButtonItem key="leftBarButtonItem" image="options.png" id="OrL-B8-FnS">
+                            <connections>
+                                <action selector="showSettingView:" destination="3" id="JSd-bJ-Gpi"/>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" systemItem="refresh" id="mwH-0V-rbL">
                             <connections>
                                 <action selector="reloadUserLocation:" destination="3" id="ajC-ga-h8c"/>
@@ -67,6 +72,7 @@
                     <connections>
                         <segue destination="fm0-yV-xkI" kind="relationship" relationship="viewControllers" id="UjU-vh-5XI"/>
                         <segue destination="aIr-PA-sKj" kind="relationship" relationship="viewControllers" id="d4C-KT-H9b"/>
+                        <segue destination="vFG-tO-Q4X" kind="relationship" relationship="viewControllers" id="izU-PO-WW7"/>
                     </connections>
                 </tabBarController>
             </objects>
@@ -106,7 +112,12 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="LogViewer" image="63-runner.png" id="XOT-di-ojm"/>
                     <navigationItem key="navigationItem" id="xDp-e5-TOb">
-                        <barButtonItem key="rightBarButtonItem" systemItem="play" id="tJz-dC-YX5"/>
+                        <nil key="title"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="play" id="tJz-dC-YX5">
+                            <connections>
+                                <action selector="playLog:" destination="W8P-PX-3Qx" id="RYE-Ee-nNZ"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <connections>
                         <outlet property="logMapView" destination="vTe-cc-1Sn" id="M2i-bg-v6N"/>
@@ -115,26 +126,55 @@
             </objects>
             <point key="canvasLocation" x="1037" y="402"/>
         </scene>
+        <!--Navigation Controller - Item-->
+        <scene sceneID="ylK-7N-dc8">
+            <objects>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="RDk-H3-3cT" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <navigationController definesPresentationContext="YES" id="vFG-tO-Q4X" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Item" id="9aW-Vd-2Ye"/>
+                    <navigationBar key="navigationBar" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="dj3-QU-Vfb">
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="iMk-Ch-Hb2" kind="relationship" relationship="rootViewController" id="DP6-kd-4yk"/>
+                    </connections>
+                </navigationController>
+            </objects>
+            <point key="canvasLocation" x="608" y="1024"/>
+        </scene>
+        <!--Sound View Controller - Sound Files-->
+        <scene sceneID="ZeH-5d-S4M">
+            <objects>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="ln8-4c-srO" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <viewController id="iMk-Ch-Hb2" customClass="SoundViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="bjh-ct-iHb">
+                        <rect key="frame" x="0.0" y="64" width="320" height="367"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="pA2-pX-LcQ">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="367"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                            </tableView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <tabBarItem key="tabBarItem" title="Sounds" image="65-note.png" id="zKy-Nb-PvP"/>
+                    <navigationItem key="navigationItem" title="Sound Files" id="Ky7-NG-EIe"/>
+                    <connections>
+                        <outlet property="soundTable" destination="pA2-pX-LcQ" id="PDe-eN-haz"/>
+                    </connections>
+                </viewController>
+            </objects>
+            <point key="canvasLocation" x="1039" y="1018"/>
+        </scene>
     </scenes>
     <resources>
         <image name="07-map-marker.png" width="16" height="26"/>
         <image name="63-runner.png" width="18" height="25"/>
+        <image name="65-note.png" width="15" height="24"/>
+        <image name="options.png" width="16" height="16"/>
     </resources>
-    <classes>
-        <class className="LogMapViewController" superclassName="UIViewController">
-            <source key="sourceIdentifier" type="project" relativePath="./Classes/LogMapViewController.h"/>
-            <relationships>
-                <relationship kind="outlet" name="logMapView" candidateClass="MKMapView"/>
-            </relationships>
-        </class>
-        <class className="MapViewController" superclassName="UIViewController">
-            <source key="sourceIdentifier" type="project" relativePath="./Classes/MapViewController.h"/>
-            <relationships>
-                <relationship kind="action" name="reloadUserLocation:"/>
-                <relationship kind="outlet" name="mapView" candidateClass="MKMapView"/>
-            </relationships>
-        </class>
-    </classes>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
         <simulatedOrientationMetrics key="orientation"/>

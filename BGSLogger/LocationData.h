@@ -10,50 +10,37 @@
 
 @interface LocationData : NSObject{
     
-    double _userLatitude; //ユーザの緯度
-    double _userLongitude; //ユーザの経度
+    double current_lat; //ユーザの緯度
+    double current_lon; //ユーザの経度
+    NSString *current_name;
     NSMutableArray *nearStations; //近くの駅データを格納するアレイ
-    double _from_lat;
-    double _from_lon;
-    double _to_lat;
-    double _to_lon;
-    NSString *_from_name;
-    NSString *_to_name;
+    double from_lat;
+    double from_lon;
+    double to_lat;
+    double to_lon;
+    NSString *from_name;
+    NSString *to_name;
+    NSString *from_date;
+    NSString *to_date;
+    NSString *account_name;//アカウント名
     
 }
 
 @property(retain,nonatomic) NSMutableArray *nearStations; //近くの駅データを格納するアレイ
+@property(readwrite) double current_lat;
+@property(readwrite) double current_lon;
+@property(readwrite) double from_lat;
+@property(readwrite) double from_lon;
+@property(readwrite) double to_lat;
+@property(readwrite) double to_lon;
+@property(retain,nonatomic) NSString *current_name;
+@property(retain,nonatomic) NSString *from_name;
+@property(retain,nonatomic) NSString *to_name;
+@property(retain,nonatomic) NSString *from_date;
+@property(retain,nonatomic) NSString *to_date;
+@property(retain,nonatomic) NSString *account_name;
 
 
 + (id)sharedCenter;
-
-//ユーザの緯度
--(void)setUserLatitude:(double)userLatitude;
--(double)getUserLatitude;
-
-//ユーザの経度
--(void)setUserLongitude:(double)userLongitude;
--(double)getUserLongitude;
-
-
--(void)setFromLat:(double)from_lat;
--(double)getFromLat;
-
--(void)setFromLon:(double)from_lon;
--(double)getFromLon;
-
--(void)setToLat:(double)to_lat;
--(double)getToLat;
-
--(void)setToLon:(double)to_lon;
--(double)getToLon;
-
--(void)setFromName:(NSString *)from_name;
--(NSString *)getFromName;
-
--(void)setToName:(NSString *)to_name;
--(NSString *)getToName;
-
-
 
 @end

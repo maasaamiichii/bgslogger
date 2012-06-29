@@ -29,6 +29,13 @@
     return self;
 }
 
+- (void)changeCoordinate:(CLLocationCoordinate2D)_coordinate {
+    [self willChangeValueForKey:@"coordinate"];
+    coordinate = _coordinate;
+    [self didChangeValueForKey:@"coordinate"];
+    
+}
+
 - (void) dealloc {
     [annotationTitle release];
     [annotationSubtitle release];

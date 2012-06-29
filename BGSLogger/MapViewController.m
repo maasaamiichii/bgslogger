@@ -12,6 +12,10 @@
 #import "ASIFormDataRequest.h"
 #import "ASIFormDataRequest.h"
 #import "ASINetworkQueue.h"
+#import <MessageUI/MessageUI.h>
+#import "IASKSpecifier.h"
+#import "IASKSettingsReader.h"
+#import "SVProgressHUD.h"
 
 
 @interface MapViewController ()
@@ -24,8 +28,14 @@
 @synthesize mapView;
 @synthesize locationManager;
 @synthesize timer;
+@synthesize appSettingsViewController;
+@synthesize accessoryBtn;
 
-
+static const NSInteger kTagAlert1 = 1; //録音開始アラート
+static const NSInteger kTagAlert2 = 2; //録音停止アラート
+static const NSInteger kTagAlert3 = 3; //駅取得失敗アラート
+static const NSInteger kTagAlert4 = 4; //ポスト成功アラート
+static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -41,7 +51,15 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    
+    
+    //アカウント名取得
+    NSUserDefaults* userDefaults = [NSUserDefaults standardUserDefaults];
+    //[userDefaults removeObjectForKey:@"AccountName"];
+    //[userDefaults synchronize];
 
+    LocationData *locationData = [LocationData sharedCenter];
+    locationData.account_name = [NSString stringWithFormat:@"%@",[userDefaults stringForKey: @"AccountName"]];
     
     // 使用している機種が録音に対応しているか
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
@@ -57,25 +75,12 @@
     if(error){
         NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
     }
-
-    
     
     //locationManager初期化
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     locationManager.distanceFilter = kCLDistanceFilterNone;
-    
-    
-    // 位置情報サービスが利用できるかどうかをチェック
-    if ([CLLocationManager locationServicesEnabled]) {
-        
-        // 測位開始
-        [locationManager startUpdatingLocation];
-    } else {
-        NSLog(@"Location services not available.");
-    }
-    
     
     //mapviewのデリゲート設定、現在地表示設定
     [mapView setDelegate: self];
@@ -87,6 +92,18 @@
     self.navigationItem.title = @"BGSLogger";
     [self.navigationController.navigationBar setTintColor:[UIColor colorWithRed:0. green:0.7 blue:1.0 alpha:1.0]];
     
+    
+    //アノテーションのアクセサリーボタンの画像を初期化
+    accessoryBtn = [[UIButton alloc] 
+                     initWithFrame:CGRectMake(0, 0, 30, 30)];  // ボタンのサイズを指定する
+    
+}
+
+
+- (void) viewWillAppear:(BOOL)animated{
+    
+    //ユーザ位置をリロード
+    [self reloadUserLocation];
 
 }
 
@@ -100,50 +117,41 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+    //return (interfaceOrientation == UIInterfaceOrientationPortrait);
+    return YES;
 }
 
 - (void)dealloc {
     [mapView release];
     [locationManager release];
     [myRecorder release];
-    [myPlayer release];
     [timer release];
+    [appSettingsViewController release];
+	appSettingsViewController = nil; 
+    [accessoryBtn release];
     [super dealloc];
 }
 
-
-//直線を描画するデリゲートメソッド
-- (MKOverlayView *)mapView:(MKMapView *)mapView viewForOverlay:(id<MKOverlay>)overlay {
-    MKPolylineView *view = [[[MKPolylineView alloc] initWithOverlay:overlay]
-                            autorelease];
-    view.strokeColor = [UIColor blueColor];
-    view.lineWidth = 5.0;
-    return view;
+- (void)didReceiveMemoryWarning {
+	// Releases the view if it doesn't have a superview.
+    [super didReceiveMemoryWarning];
+	
+	// Release any cached data, images, etc that aren't in use.
+	self.appSettingsViewController = nil;
 }
 
-- (void)mapView:(MKMapView *)mapView regionWillChangeAnimated:(BOOL)animated{
-    
-}
 
 
 // 位置情報更新時に呼ばれるデリゲートメソッド
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     
-    //緯度・経度を出力
-    NSLog(@"didUpdateToLocation latitude=%f, longitude=%f",
-          [newLocation coordinate].latitude,
-          [newLocation coordinate].longitude);
-    
-    
     //データを格納するシングルトンの作成
     LocationData *locationData = [LocationData sharedCenter];
     
     //ユーザの緯度経度をセット
-    [locationData setUserLatitude:[newLocation coordinate].latitude];
-    [locationData setUserLongitude:[newLocation coordinate].longitude];
-    
-    
+    [locationData setCurrent_lat:[newLocation coordinate].latitude];
+    [locationData setCurrent_lon:[newLocation coordinate].longitude];
+
     
     //mapviewの表示設定
     MKCoordinateRegion region = MKCoordinateRegionMake([newLocation coordinate], MKCoordinateSpanMake(0.02, 0.02));
@@ -157,6 +165,39 @@
     //更新をやめる
     [locationManager stopUpdatingLocation];
     
+    //現在地の住所を取得
+    CLGeocoder *geoCoder = [[CLGeocoder alloc] init];
+    [geoCoder reverseGeocodeLocation: locationManager.location completionHandler: 
+     ^(NSArray *placemarks, NSError *error) {
+         
+         //Get nearby address
+         CLPlacemark *placemark = [placemarks objectAtIndex:0];
+         
+         //String to hold address
+         NSString *locatedAt = [[placemark.addressDictionary valueForKey:@"FormattedAddressLines"] componentsJoinedByString:@", "];
+         [locationData setCurrent_name:locatedAt];
+     }];
+    
+}
+
+
+- (void)mapView:(MKMapView *)mapView didUpdateUserLocation:(MKUserLocation *)userLocation 
+{
+    MKAnnotationView* annotationView = [self.mapView viewForAnnotation:userLocation];
+    
+    //UIImageを指定した生成例
+    UIImage *image;
+    
+    if(!myRecorder.isRecording){
+        image = [UIImage imageNamed:@"rec.png"];
+    }
+    else if(myRecorder.isRecording){
+        image = [UIImage imageNamed:@"stop.png"];
+    }
+
+    [accessoryBtn setBackgroundImage:image forState:UIControlStateNormal];  // 画像をセットする
+    annotationView.rightCalloutAccessoryView = accessoryBtn;
+    
 }
 
 
@@ -165,9 +206,6 @@
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error{
     NSLog(@"didFailWithError");
 }
-
-
-
 
 
 //測位機能オン
@@ -187,9 +225,24 @@
 
 //アノテーションの設定
 -(MKAnnotationView*)mapView:(MKMapView*)mapView viewForAnnotation:(id)annotation{
-    
+
     //現在地にはデフォルトの青色のピンを使う
-    if(annotation == self.mapView.userLocation){
+    if(annotation == self.mapView.userLocation){ 
+        MKUserLocation *user_annotation = self.mapView.userLocation;
+        user_annotation.title = @"現在地";
+        
+        //現在地の住所を取得
+        CLGeocoder *geoCoder = [[CLGeocoder alloc] init];
+        [geoCoder reverseGeocodeLocation: locationManager.location completionHandler: 
+         ^(NSArray *placemarks, NSError *error) {
+             
+             //Get nearby address
+             CLPlacemark *placemark = [placemarks objectAtIndex:0];
+             
+             //String to hold address
+             NSString *locatedAt = [[placemark.addressDictionary valueForKey:@"FormattedAddressLines"] componentsJoinedByString:@", "];
+             user_annotation.subtitle = locatedAt;
+         }];
         return nil;
     }
     
@@ -204,7 +257,7 @@
             pav.pinColor = MKPinAnnotationColorRed;  // ピンの色を赤にする
             pav.canShowCallout = YES;  // ピンタップ時にコールアウトを表示する
         
-            //UIImageを指定した生成例
+            //rec.pngをアクセサリーボタンの画像にセット
             UIImage *image;
             if(!myRecorder.isRecording){
                 image = [UIImage imageNamed:@"rec.png"];
@@ -212,8 +265,6 @@
             else if(myRecorder.isRecording){
                 image = [UIImage imageNamed:@"stop.png"];
             }
-            accessoryBtn = [[[UIButton alloc] 
-                            initWithFrame:CGRectMake(0, 0, 30, 30)] autorelease];  // ボタンのサイズを指定する
             [accessoryBtn setBackgroundImage:image forState:UIControlStateNormal];  // 画像をセットする
             pav.rightCalloutAccessoryView = accessoryBtn;
         }
@@ -222,59 +273,20 @@
     
 }
 
-//アノテーションが選択された時に呼ばれるデリゲートメソッド
-- (void)mapView:(MKMapView *)mapView didSelectAnnotationView:(MKAnnotationView *)view {
-    
-    //UIImageを指定した生成例
-    UIImage *image;
-    
-    //録音中でないときは録音画像をセット
-    if(!myRecorder.isRecording){
-        image = [UIImage imageNamed:@"rec.png"];
-    }
-    
-    //録音中は停止画像をセット
-    else if(myRecorder.isRecording){
-        image = [UIImage imageNamed:@"stop.png"];
-    }
-    accessoryBtn = [[[UIButton alloc] 
-                      initWithFrame:CGRectMake(0, 0, 30, 30)]autorelease];  // ボタンのサイズを指定する
-    [accessoryBtn setBackgroundImage:image forState:UIControlStateNormal];  // 画像をセットする
-    view.rightCalloutAccessoryView = accessoryBtn;
-}
-
-
-//アノテーションが選択解除された時に呼ばれるデリゲートメソッド
-- (void)mapView:(MKMapView *)mapView didDeselectAnnotationView:(MKAnnotationView *)view{
-    
-    UIImage *image;
-    
-    //録音中でないときは録音画像をセット
-    if(!myRecorder.isRecording){
-        image = [UIImage imageNamed:@"rec.png"];
-    }
-    
-    //録音中は停止画像をセット
-    else if(myRecorder.isRecording){
-        image = [UIImage imageNamed:@"stop.png"];
-    }
-    accessoryBtn = [[[UIButton alloc] 
-                    initWithFrame:CGRectMake(0, 0, 30, 30)]autorelease];  // ボタンのサイズを指定する
-    [accessoryBtn setBackgroundImage:image forState:UIControlStateNormal];  // 画像をセットする
-    view.rightCalloutAccessoryView = accessoryBtn;
-}
-
 
 
 //アノテーションのアクセサリーボタンをタップしたときに呼ばれるデリゲートメソッド
 - (void) mapView:(MKMapView*)_mapView annotationView:(MKAnnotationView*)annotationView calloutAccessoryControlTapped:(UIControl*)control { 
-    
-    
-    NSLog(@"annotationView annotation is %@", annotationView.annotation); 
-    NSLog(@"annotationView title is %@", annotationView.annotation.title); // アノテーションバルーンのtitle
-    NSLog(@" annotationView subtitle is %@", annotationView.annotation.subtitle); // アノテーションバルーンのsubtitle
-      
+
+    //アカウント名が入力されていない場合、リターン
     LocationData *locationData = [LocationData sharedCenter];
+    if([locationData.account_name isEqualToString:@""]){
+        UIAlertView *nonaccountalert = [[UIAlertView alloc] initWithTitle:nil message:@"設定画面でアカウント名を入力してください" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+        nonaccountalert.tag = kTagAlert4;
+        [nonaccountalert show];
+        [nonaccountalert release];
+        return;
+    }
     
     
     //録音中でないとき、レコーダを生成する
@@ -288,7 +300,7 @@
         //録音先のパスを決定する
         NSArray *filePaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *documentDir = [filePaths objectAtIndex:0];
-        NSString *filePath = [NSString stringWithFormat:@"%@.caf",dateString];
+        NSString *filePath = [NSString stringWithFormat:@"%@.aac",dateString];
         NSString *path = [documentDir stringByAppendingPathComponent:filePath];
         recordingURL = [NSURL fileURLWithPath:path];
         
@@ -301,11 +313,8 @@
         // 録音の設定 AVNumberOfChannelsKey チャンネル数1
         NSDictionary *settings = [NSDictionary dictionaryWithObjectsAndKeys:
                                   [NSNumber numberWithFloat: 44100.0], AVSampleRateKey,
-                                  [NSNumber numberWithInt: kAudioFormatLinearPCM], AVFormatIDKey,
-                                  [NSNumber numberWithInt: 1], AVNumberOfChannelsKey,
-                                  [NSNumber numberWithInt:16], AVLinearPCMBitDepthKey,
-                                  [NSNumber numberWithBool:NO], AVLinearPCMIsBigEndianKey,
-                                  [NSNumber numberWithBool:NO], AVLinearPCMIsFloatKey,
+                                  [NSNumber numberWithInt: kAudioFormatMPEG4AAC], AVFormatIDKey,
+                                  [NSNumber numberWithUnsignedInt:128000], AVEncoderBitRateKey,
                                   nil];
         
         //recorderを用意する
@@ -322,36 +331,58 @@
     
     //録音中でないとき、録音確認のアラートビューを表示
     if(!myRecorder.isRecording){
+        NSDateFormatter *df = [[NSDateFormatter alloc] init];
+        df.dateFormat  = @"yyyy-MM-dd HH:mm:ss";
+        NSString *dateString = [df stringFromDate:[NSDate date]];
+
+        [locationData setFrom_lat:annotationView.annotation.coordinate.latitude];
+        [locationData setFrom_lon:annotationView.annotation.coordinate.longitude];
+        [locationData setFrom_date:dateString];
         
-        [locationData setFromLat:annotationView.annotation.coordinate.latitude];
-        [locationData setFromLon:annotationView.annotation.coordinate.longitude];
-        [locationData setFromName:annotationView.annotation.title];
+        if(annotationView.annotation == mapView.userLocation)
+            [locationData setFrom_name:locationData.current_name];
+        else
+            [locationData setFrom_name:annotationView.annotation.title];
 
         
         UIAlertView *alert = [[UIAlertView alloc] init];
         alert.delegate = self;
         if(annotationView.annotation == mapView.userLocation)
-            alert.title = [NSString stringWithFormat:@"現在地:緯度%f,経度%f",annotationView.annotation.coordinate.latitude,annotationView.annotation.coordinate.longitude];
+            alert.title = [NSString stringWithFormat:@"現在地:%@",locationData.current_name];
         else 
         alert.title = [NSString stringWithFormat:@"現在地：%@",annotationView.annotation.title];
         alert.message = @"録音を開始します。";
         [alert addButtonWithTitle:@"いいえ"];
         [alert addButtonWithTitle:@"はい"];
+        alert.tag = kTagAlert1;
         [alert show];
     }
     
     //録音中のとき、録音停止確認のアラートビューを表示
     else if(myRecorder.isRecording){
-        [locationData setToLat:annotationView.annotation.coordinate.latitude];
-        [locationData setToLon:annotationView.annotation.coordinate.longitude];
-        [locationData setToName:annotationView.annotation.title];
+        NSDateFormatter *df = [[NSDateFormatter alloc] init];
+        df.dateFormat  = @"yyyy-MM-dd HH:mm:ss";
+        NSString *dateString = [df stringFromDate:[NSDate date]];
+
+        [locationData setTo_lat:annotationView.annotation.coordinate.latitude];
+        [locationData setTo_lon:annotationView.annotation.coordinate.longitude];
+        [locationData setTo_date:dateString];
+        
+        if(annotationView.annotation == mapView.userLocation)
+            [locationData setTo_name:locationData.current_name];
+        else
+            [locationData setTo_name:annotationView.annotation.title];
         
         UIAlertView *alert = [[UIAlertView alloc] init];
         alert.delegate = self;
-        alert.title = [NSString stringWithFormat:@"現在地：%@",annotationView.annotation.title];
+        if(annotationView.annotation == mapView.userLocation)
+            alert.title = [NSString stringWithFormat:@"現在地:%@",locationData.current_name];
+        else 
+            alert.title = [NSString stringWithFormat:@"現在地：%@",annotationView.annotation.title];
         alert.message = @"録音を停止します。";
         [alert addButtonWithTitle:@"いいえ"];
         [alert addButtonWithTitle:@"はい"];
+        alert.tag = kTagAlert2;
         [alert show];
     }
     
@@ -360,32 +391,44 @@
 
 
 // アラートのボタンが押された時に呼ばれるデリゲートメソッド
--(void)alertView:(UIAlertView*)alertView    clickedButtonAtIndex:(NSInteger)buttonIndex {
+-(void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     
-    switch (buttonIndex) {
-        case 0:
-            //いいえボタン
-            
-            break;
-            
-        case 1:
-            //はいボタン
-            //録音中でないとき、録音スタート
-            if(!myRecorder.recording && !myPlayer.isPlaying){
-                NSLog(@"record start");
+    //録音開始アラート
+    if(kTagAlert1 == alertView.tag){
+        switch (buttonIndex) {
+            case 0:
+                //いいえボタン
+                break;
+                
+            case 1:
+                //はいボタン
+                //録音スタート
                 [myRecorder record];
                 
+                //アノテーションのアクセサリーボタンの画像をstop.pngに変更
+                [accessoryBtn setBackgroundImage:[UIImage imageNamed:@"stop.png"] forState:UIControlStateNormal];
                 [self startTimer];
-                
+            
                 //ステータスバーの色を変える
                 [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleBlackOpaque animated:YES];
-                
+            
                 //ナビゲーションバーの色を変える
                 [self.navigationController.navigationBar setTintColor:[UIColor redColor]];
-            }
-            
-            //録音中のとき、録音ストップ
-            else if(myRecorder.recording && !myPlayer.isPlaying){
+                break;
+                
+            default:
+                break;
+        }
+    }
+    //録音停止アラート
+    else if(kTagAlert2 == alertView.tag){
+        switch (buttonIndex) {
+            case 0:
+                //いいえボタン
+                break;
+                
+            case 1:
+                //録音中のとき、録音ストップ
                 [self stopTimer];
                 [myRecorder stop];
                 [locationManager stopUpdatingLocation];
@@ -394,18 +437,81 @@
                 //ステータスバーの色を変える
                 [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleDefault animated:YES];
                 
-                 //ナビゲーションバーの色を変える
+                //ナビゲーションバーの色を変える
                 [self.navigationController.navigationBar setTintColor:[UIColor colorWithRed:0. green:0.7 blue:1.0 alpha:1.0]];
+                break;
                 
-            }
-            break;
+            default:
+                break;
+        }
     }
+    //駅取得失敗アラート
+    else if(kTagAlert3 == alertView.tag){
+        switch (buttonIndex) {
+            case 0:
+                //いいえボタン
+                break;
+            case 1:
+                //はいボタン
+                //リロード
+                if ([CLLocationManager locationServicesEnabled]) {
+                    
+                    // 測位開始
+                    [locationManager startUpdatingLocation];
+                } else {
+                    NSLog(@"Location services not available.");
+                }
+                for (id annotation in mapView.annotations) {
+                    if (![annotation isKindOfClass:[MKUserLocation class]]){
+                        [mapView removeAnnotation:annotation];
+                    }
+                }
+
+                break;
+                
+            default:
+                break;
+        
+        }
+    }
+    //サーバーポスト成功アラート
+    else if(kTagAlert4 == alertView.tag){
+        switch (buttonIndex) {
+            case 0:
+                //OKボタン
+                break;
+            default:
+                break;
+                
+        }
+    }
+    //サーバーポスト失敗アラート
+    else if(kTagAlert5 == alertView.tag){
+        switch (buttonIndex) {
+            case 0:
+                //OKボタン
+                break;
+            case 1:
+                [self postUserLocation];
+                break;
+            default:
+                break;
+        }
+    }
+
     
 }
 
 
-//現在地のリロード
+//現在地、アノテーションのリロードアクション
 - (IBAction)reloadUserLocation:(id)sender {
+    
+    [self reloadUserLocation];
+}
+
+
+//現在地、アノテーションのリロードメソッド
+-(void) reloadUserLocation{
     if ([CLLocationManager locationServicesEnabled]) {
         
         // 測位開始
@@ -414,15 +520,13 @@
         NSLog(@"Location services not available.");
     }
     for (id annotation in mapView.annotations) {
-        NSLog(@"annotation %@", annotation);
-        
         if (![annotation isKindOfClass:[MKUserLocation class]]){
-            
             [mapView removeAnnotation:annotation];
         }
     }
-    
+
 }
+
 
 
 //レコード、プレイ時のタイマースタート
@@ -448,27 +552,18 @@
     if(myRecorder && myRecorder.recording){
         self.navigationItem.title = [NSString stringWithFormat:@"録音中:%f",myRecorder.currentTime];
     }
-    else if(myPlayer && myPlayer.isPlaying){
-        self.navigationItem.title = [NSString stringWithFormat:@"再生中:%f",myPlayer.currentTime];
-    }
-    
 }
 
 
 //録音終了時に呼ばれるデリゲートメソッド
 - (void) audioRecorderDidFinishRecording:(AVAudioRecorder *)recorder successfully:(BOOL)flag{
-    NSLog(@"record stop");
     myRecorder = nil;
     [self stopTimer];
+    
+    //アノテーションのアクセサリーボタンの画像をrec.pngに変更
+    [accessoryBtn setBackgroundImage:[UIImage imageNamed:@"rec.png"] forState:UIControlStateNormal];
     [self postUserLocation];
     
-}
-
-//再生終了時に呼ばれるデリゲートメソッド
-- (void) audioPlayerDidFinishPlaying:(AVAudioPlayer *)player successfully:(BOOL)flag{
-    NSLog(@"play stop");
-    [self stopTimer];
-    myPlayer = nil;
 }
 
 
@@ -488,6 +583,8 @@
     [request setDidFailSelector:@selector(stationGetFailed:)];
     [request setDefaultResponseEncoding:NSUTF8StringEncoding];
     [request startAsynchronous];
+    [SVProgressHUD showWithStatus:@"近くの駅を取得しています。"];
+    
 }
 
 
@@ -495,11 +592,11 @@
 //リクエスト成功時
 - (void)stationGetSucceeded:(ASIFormDataRequest*)request
 {
+    [SVProgressHUD dismiss];
     [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
     
     //帰ってきた文字列
     NSString *resString = [request responseString];
-    NSLog(@"%@\n", resString);
     
     //データを格納するシングルトン
     LocationData *locationData = [LocationData sharedCenter];
@@ -513,17 +610,12 @@
     //各データをkeyごとにディクショナリに追加
     for(int i = 0; i < [gotStations count] - 1; i++){
         dict[i] = [[[NSMutableDictionary alloc]init ]autorelease];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:0] forKey:@"station_name"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:1] forKey:@"line_name"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:2] forKey:@"lat"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:3] forKey:@"lon"];
+        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:0] forKey:@"station_name"];
+        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:1] forKey:@"line_name"];
+        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:2] forKey:@"lat"];
+        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:3] forKey:@"lon"];
         [locationData.nearStations addObject:dict[i]];
-    }
-    
-    NSLog(@"%@",[locationData.nearStations description]);
-    
-    NSLog(@"stationgetsuceeded");
-    
+    }    
     
     //取得した駅のアノテーションを追加
     for(int i = 0; i < [locationData.nearStations count]; i++){
@@ -542,31 +634,34 @@
 //リクエスト失敗時
 - (void)stationGetFailed:(ASIFormDataRequest*)request
 {
+    [SVProgressHUD dismiss];
     [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
     [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:nil message:@"取得できませんでした。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
-    
+    UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:@"取得できませんでした。" message:@"もう一度取得しますか？" delegate:nil cancelButtonTitle:@"いいえ" otherButtonTitles:@"はい", nil];
+    notgetalert.tag = kTagAlert3;
     [notgetalert show];
     [notgetalert release];
-    NSString *resString = [request responseString];
-    NSLog(@"%@", resString);
     NSLog(@"stationgetfailed");
 }
 
 
 
+//ユーザの位置情報、録音情報を送信
 -(void)postUserLocation{
     [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
     LocationData *locationData = [LocationData sharedCenter];
     NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/InsertRecordInformation.php"];
     ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
-    [request setPostValue:[NSString stringWithFormat:@"%f", [locationData getFromLat]] forKey:@"from_lat"];
-    [request setPostValue:[NSString stringWithFormat:@"%f", [locationData getFromLon]] forKey:@"from_lon"];
-    [request setPostValue:[NSString stringWithFormat:@"%f", [locationData getToLat]] forKey:@"to_lat"];
-    [request setPostValue:[NSString stringWithFormat:@"%f", [locationData getToLon]] forKey:@"to_lon"];
-    [request setPostValue:[locationData getFromName] forKey:@"from_name"];
-    [request setPostValue:[locationData getToName] forKey:@"to_name"];
+    [request setPostValue:[NSString stringWithFormat:@"%f", locationData.from_lat] forKey:@"from_lat"];
+    [request setPostValue:[NSString stringWithFormat:@"%f", locationData.from_lon] forKey:@"from_lon"];
+    [request setPostValue:[NSString stringWithFormat:@"%f", locationData.to_lat] forKey:@"to_lat"];
+    [request setPostValue:[NSString stringWithFormat:@"%f", locationData.to_lon] forKey:@"to_lon"];
+    [request setPostValue:locationData.from_name forKey:@"from_name"];
+    [request setPostValue:locationData.to_name forKey:@"to_name"];
+    [request setPostValue:locationData.from_date forKey:@"from_date"];
+    [request setPostValue:locationData.to_date forKey:@"to_date"];
     [request setPostValue:fileName forKey:@"file_name"];
+    [request setPostValue:locationData.account_name forKey:@"account_name"];
     
     [request setTimeOutSeconds:30];
     [request setDelegate:self];
@@ -574,6 +669,7 @@
     [request setDidFailSelector:@selector(postUserLocationFailed:)];
     [request setDefaultResponseEncoding:NSUTF8StringEncoding];
     [request startAsynchronous];
+    [SVProgressHUD showWithStatus:@"サーバにアップロード中..."];
 }
 
 
@@ -581,12 +677,11 @@
 - (void)postUserLocationSucceeded:(ASIFormDataRequest*)request
 {
     [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    
-    UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:nil message:@"アップロード成功" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
-    [notgetalert show];
-    [notgetalert release];
-    NSString *resString = [request responseString];
-    NSLog(@"%@", resString);
+    [SVProgressHUD dismiss];
+    UIAlertView *postdidalert = [[UIAlertView alloc] initWithTitle:nil message:@"アップロード成功" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+    postdidalert.tag = kTagAlert4;
+    [postdidalert show];
+    [postdidalert release];
     NSLog(@"postUserLocationSuceeded");
     
 }
@@ -595,59 +690,46 @@
 - (void)postUserLocationFailed:(ASIFormDataRequest*)request
 {
     [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:nil message:@"サーバーへのアップロードに失敗しました。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+    [SVProgressHUD dismiss];
+    UIAlertView *postfailedalert = [[UIAlertView alloc] initWithTitle:@"サーバーへのアップロードに失敗しました。" message:@"もう一度アップロードに挑戦しますか？" delegate:nil cancelButtonTitle:@"いいえ" otherButtonTitles:@"はい", nil];
+    postfailedalert.tag = kTagAlert5;
     
-    [notgetalert show];
-    [notgetalert release];
-    NSString *resString = [request responseString];
-    NSLog(@"%@", resString);
+    [postfailedalert show];
+    [postfailedalert release];
     NSLog(@"postUserLocationFailed");
 }
 
 
-//再生メソッドメモ
-/*
-//再生スタートボタン
-- (IBAction)startPlay:(id)sender {
-    
-    if(myPlayer == nil){
-        //playerを用意
-        NSError *playError = nil;
-        myPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:recordingURL error: &playError];
-        
-        if( playError ){
-            NSLog(@"playError = %@",playError);
-            return;
-        }
-        myPlayer.delegate = self;
-    }
-    
-    if(!myPlayer.isPlaying && !myRecorder.recording){
-        NSLog(@"play start");
-        [myPlayer play];
-        [self startTimer];
-    }
+
+//セッティングビューの設定
+- (IASKAppSettingsViewController*)appSettingsViewController {
+	if (!appSettingsViewController) {
+		appSettingsViewController = [[IASKAppSettingsViewController alloc] initWithNibName:@"IASKAppSettingsView" bundle:nil];
+		appSettingsViewController.delegate = self;
+	}
+	return appSettingsViewController;
 }
 
-//一時停止ボタン
-- (IBAction)pausePlay:(id)sender {
-    if(myPlayer.isPlaying && !myRecorder.recording){
-        NSLog(@"play pause");
-        [myPlayer pause];
-    }
+
+//セッティングビューの表示
+- (IBAction)showSettingView:(id)sender {
+    UINavigationController *aNavController = [[UINavigationController alloc] initWithRootViewController:self.appSettingsViewController];
+    //[viewController setShowCreditsFooter:NO];   // Uncomment to not display InAppSettingsKit credits for creators.
+    // But we encourage you not to uncomment. Thank you!
+    self.appSettingsViewController.showDoneButton = YES;
+    [self presentModalViewController:aNavController animated:YES];
+    [aNavController release];
 }
 
-//再生停止ボタン
-- (IBAction)stopPlay:(id)sender {
-    if(myPlayer.isPlaying && !myRecorder.recording){ 
-        NSLog(@"play stop");
-        [myPlayer stop];
-        [self stopTimer];
-        myPlayer.currentTime = 0;
-        myPlayer = nil;
-    }
-}*/
 
+//セッティングビューを閉じたとき
+- (void)settingsViewControllerDidEnd:(IASKAppSettingsViewController*)sender {
+    [self dismissModalViewControllerAnimated:YES];
+    LocationData *locationData = [LocationData sharedCenter];
+    
+    NSUserDefaults* userDefaults = [NSUserDefaults standardUserDefaults];
+    locationData.account_name = [NSString stringWithFormat:@"%@",[userDefaults stringForKey: @"AccountName"]];
+}
 
 
 @end
