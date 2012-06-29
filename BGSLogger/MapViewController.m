@@ -61,21 +61,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     LocationData *locationData = [LocationData sharedCenter];
     locationData.account_name = [NSString stringWithFormat:@"%@",[userDefaults stringForKey: @"AccountName"]];
     
-    // 使用している機種が録音に対応しているか
-    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
-    NSError *error = nil;
-    if ([audioSession inputIsAvailable]) {
-        [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord error:&error];
-    }
-    if(error){
-        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
-    }
-    // 録音機能をアクティブにする
-    [audioSession setActive:YES error:&error];
-    if(error){
-        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
-    }
-    
+        
     //locationManager初期化
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
@@ -101,6 +87,21 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
 
 
 - (void) viewWillAppear:(BOOL)animated{
+    // 使用している機種が録音に対応しているか
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    NSError *error = nil;
+    if ([audioSession inputIsAvailable]) {
+        [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord error:&error];
+    }
+    if(error){
+        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
+    }
+    // 録音機能をアクティブにする
+    [audioSession setActive:YES error:&error];
+    if(error){
+        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
+    }
+
     
     //ユーザ位置をリロード
     [self reloadUserLocation];
@@ -287,6 +288,8 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
         [nonaccountalert release];
         return;
     }
+    
+    
     
     
     //録音中でないとき、レコーダを生成する

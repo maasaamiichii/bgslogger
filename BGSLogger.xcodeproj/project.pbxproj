@@ -54,6 +54,9 @@
 		67188F9B159E0D6E000E7D72 /* SoundViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 67188F9A159E0D6E000E7D72 /* SoundViewController.m */; };
 		67188FA5159E195C000E7D72 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67188FA4159E1954000E7D72 /* MediaPlayer.framework */; };
 		67188FB3159E2DB9000E7D72 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67188FB2159E2DB4000E7D72 /* AudioToolbox.framework */; };
+		67188FBA159E62BA000E7D72 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67188FB9159E62BA000E7D72 /* CoreData.framework */; };
+		67188FBE159E62E2000E7D72 /* Record.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 67188FBC159E62E2000E7D72 /* Record.xcdatamodeld */; };
+		67188FC5159E64BA000E7D72 /* Record_Information.m in Sources */ = {isa = PBXBuildFile; fileRef = 67188FC4159E64BA000E7D72 /* Record_Information.m */; };
 		6739EF4E1591F694007EC645 /* CustomAnnotation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF4D1591F694007EC645 /* CustomAnnotation.m */; };
 		6739EF4F1591F6B7007EC645 /* CustomAnnotation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF4D1591F694007EC645 /* CustomAnnotation.m */; };
 		6739EF551591FCE1007EC645 /* LocationData.m in Sources */ = {isa = PBXBuildFile; fileRef = 6739EF541591FCE1007EC645 /* LocationData.m */; };
@@ -375,6 +378,10 @@
 		67188F9A159E0D6E000E7D72 /* SoundViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SoundViewController.m; sourceTree = "<group>"; };
 		67188FA4159E1954000E7D72 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		67188FB2159E2DB4000E7D72 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		67188FB9159E62BA000E7D72 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		67188FBD159E62E2000E7D72 /* Record.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Record.xcdatamodel; sourceTree = "<group>"; };
+		67188FC3159E64BA000E7D72 /* Record_Information.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Record_Information.h; sourceTree = "<group>"; };
+		67188FC4159E64BA000E7D72 /* Record_Information.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Record_Information.m; sourceTree = "<group>"; };
 		6739EF4C1591F694007EC645 /* CustomAnnotation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomAnnotation.h; sourceTree = "<group>"; };
 		6739EF4D1591F694007EC645 /* CustomAnnotation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomAnnotation.m; sourceTree = "<group>"; };
 		6739EF531591FCE1007EC645 /* LocationData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocationData.h; sourceTree = "<group>"; };
@@ -622,6 +629,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				67188FBA159E62BA000E7D72 /* CoreData.framework in Frameworks */,
 				67188FB3159E2DB9000E7D72 /* AudioToolbox.framework in Frameworks */,
 				67188FA5159E195C000E7D72 /* MediaPlayer.framework in Frameworks */,
 				67ECBD1B159A4703004EAB05 /* QuartzCore.framework in Frameworks */,
@@ -817,6 +825,9 @@
 		67823D63158EFAC000C1F464 = {
 			isa = PBXGroup;
 			children = (
+				67188FC3159E64BA000E7D72 /* Record_Information.h */,
+				67188FC4159E64BA000E7D72 /* Record_Information.m */,
+				67188FBC159E62E2000E7D72 /* Record.xcdatamodeld */,
 				6709AAE81598E1250031E7C7 /* SVProgressHUD */,
 				6709AAA21598D9D90031E7C7 /* InAppSettingsKit */,
 				6710789A1590F4CB001CD49F /* HttpClass */,
@@ -840,6 +851,7 @@
 		67823D71158EFAC000C1F464 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				67188FB9159E62BA000E7D72 /* CoreData.framework */,
 				67188FB2159E2DB4000E7D72 /* AudioToolbox.framework */,
 				67188FA4159E1954000E7D72 /* MediaPlayer.framework */,
 				67ECBD1A159A4703004EAB05 /* QuartzCore.framework */,
@@ -1486,6 +1498,8 @@
 				6709AAED1598E1250031E7C7 /* SVProgressHUD.m in Sources */,
 				67ECBD22159A4A2E004EAB05 /* CustomAnnotationView.m in Sources */,
 				67188F9B159E0D6E000E7D72 /* SoundViewController.m in Sources */,
+				67188FBE159E62E2000E7D72 /* Record.xcdatamodeld in Sources */,
+				67188FC5159E64BA000E7D72 /* Record_Information.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1688,6 +1702,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		67188FBC159E62E2000E7D72 /* Record.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				67188FBD159E62E2000E7D72 /* Record.xcdatamodel */,
+			);
+			currentVersion = 67188FBD159E62E2000E7D72 /* Record.xcdatamodel */;
+			path = Record.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 67823D65158EFAC000C1F464 /* Project object */;
 }

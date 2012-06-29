@@ -52,18 +52,6 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     [super viewDidLoad];
     playLogNumber = 0;
     
-    // 使用している機種が録音に対応しているか
-    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
-    NSError *error = nil;
-    [audioSession setCategory:AVAudioSessionCategoryAmbient error:nil];
-    if(error){
-        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
-    }
-    // 録音機能をアクティブにする
-    [audioSession setActive:YES error:&error];
-    if(error){
-        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
-    }
     //mapviewのデリゲート設定、現在地表示設定
     [logMapView setDelegate: self];
     logMapView.mapType = MKMapTypeSatellite;
@@ -79,6 +67,19 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
 }
 
 - (void) viewWillAppear:(BOOL)animated{
+    // 使用している機種が録音に対応しているか
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    NSError *error = nil;
+    [audioSession setCategory:AVAudioSessionCategoryAmbient error:nil];
+    if(error){
+        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
+    }
+    // 録音機能をアクティブにする
+    [audioSession setActive:YES error:&error];
+    if(error){
+        NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
+    }
+
     
     [self reloadLogData];
 }
@@ -240,7 +241,6 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
             return;
         }
         myPlayer.delegate = self;
-        myPlayer.volume =  1.0f;
         
         //再生中でない時
         if(!myPlayer.isPlaying){
@@ -255,9 +255,19 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
             //ナビゲーションバーのボタンを変更
              UIBarButtonItem *btn = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemPause target:self action:@selector(stopPlay)];
              self.navigationItem.rightBarButtonItem = btn;
+           
+            //現在の向きを取得
+            UIInterfaceOrientation orientation = [[UIDevice currentDevice] orientation];
             
-            //スライダーを追加
-            sl = [[UISlider alloc] initWithFrame:CGRectMake(10, 330, 300, 10)];
+            if( orientation == UIInterfaceOrientationLandscapeRight || orientation == UIInterfaceOrientationLandscapeLeft ){
+                //スライダーを追加
+                sl = [[UISlider alloc] initWithFrame:CGRectMake(20, 190, 440, 10)];
+            }
+            else{
+                //スライダーを追加
+                sl = [[UISlider alloc] initWithFrame:CGRectMake(10, 330, 300, 10)];
+                
+            }
             sl.minimumValue = 0.0;  // 最小値を0に設定
             sl.maximumValue = myPlayer.duration;  // 最大値をファイルの長さに設定
             sl.value = 0.0; //初期値を0にセット
@@ -390,6 +400,20 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
         co.longitude = currentUserLon;
         [userLogAnnotation changeCoordinate:co]; 
         [logMapView addAnnotation:userLogAnnotation];
+        
+        //現在の向きを取得
+        UIInterfaceOrientation orientation = [[UIDevice currentDevice] orientation];
+        
+        //画面の向きに応じてスライダーの位置を変更する
+        if( orientation == UIInterfaceOrientationLandscapeRight || orientation == UIInterfaceOrientationLandscapeLeft ){
+            sl.frame = CGRectMake(20, 190, 440, 10);
+        }
+        else{
+            sl.frame = CGRectMake(10, 330, 300, 10);
+            
+        }
+
+        
     }
 }
 
