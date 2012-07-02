@@ -29,6 +29,6 @@
 @property (retain, nonatomic) UISlider *sl;
 -(void) startTimer; //プレイ時のタイマーをスタート
 -(void) stopTimer; //プレイ時のタイマーをストップ
--(void)deleteUserLog;
+//-(void)deleteUserLog;
 
 @end

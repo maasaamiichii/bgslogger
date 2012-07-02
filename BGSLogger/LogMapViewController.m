@@ -7,17 +7,17 @@
 //
 
 #import "LogMapViewController.h"
-#import "ASIFormDataRequest.h"
-#import "ASIFormDataRequest.h"
-#import "ASINetworkQueue.h"
+//#import "ASIFormDataRequest.h"
+//#import "ASINetworkQueue.h"
 #import "UserLogData.h"
 #import "SVProgressHUD.h"
 #import "LocationData.h"
 #import "CustomAnnotationView.h"
+#import "FMDB/FMDatabase.h"
+#import "FMDB/FMDatabaseAdditions.h"
+
 
 @interface LogMapViewController ()
-
-
 -(double) getMaxLat:(UserLogData *)userlogdata;
 -(double) getMinLat:(UserLogData *)userlogdata;
 -(double) getMaxLon:(UserLogData *)userlogdata;
@@ -31,6 +31,8 @@
 @synthesize playTimer;
 @synthesize userLogAnnotation;
 @synthesize sl;
+@synthesize myPlayer;
+@synthesize isPlaying;
 
 static const NSInteger kTagAlert1 = 1; //再生開始アラート
 static const NSInteger kTagAlert2 = 2; //録音停止アラート
@@ -47,10 +49,36 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     return self;
 }
 
+
+//割り込み対応のコールバック関数
+static void interruption(void *inClientData, UInt32 inInterruptioState){
+    
+    LogMapViewController *controller = inClientData;
+    
+    //割り込み開始
+    if(inInterruptioState == kAudioSessionBeginInterruption){
+        NSLog(@"Begin Interruption");
+    }
+    
+    else {
+        NSLog(@"end Interruption");
+        if(controller.myPlayer && controller.isPlaying){
+            [controller.myPlayer play];
+        }
+    }
+    
+}
+
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     playLogNumber = 0;
+    
+    AudioSessionInitialize(NULL,NULL, interruption,self);
+    AudioSessionSetActive(YES);
+    
+        
     
     //mapviewのデリゲート設定、現在地表示設定
     [logMapView setDelegate: self];
@@ -62,11 +90,12 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     
     line = nil;
     
-    userLogAnnotation = [[CustomAnnotation alloc] initWithLocationCoordinate:CLLocationCoordinate2DMake(0,0) title:@"移動中なう♪" subtitle:nil];
+    userLogAnnotation = [[CustomAnnotation alloc] initWithLocationCoordinate:CLLocationCoordinate2DMake(0,0) title:@"移動中" subtitle:nil];
 
 }
 
 - (void) viewWillAppear:(BOOL)animated{
+    
     // 使用している機種が録音に対応しているか
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
     NSError *error = nil;
@@ -118,8 +147,18 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
             [logMapView removeAnnotation:annotation];
         }
     }
+    UserLogData *userLogData = [UserLogData sharedCenter];
+    if([userLogData.stations count] == 0){
+        for (id overlay in logMapView.overlays) {
+            [logMapView removeOverlay:overlay];
+        }
+    }
     
-    [self getUserLog];
+
+    
+    //サーバーを使うときコメント合うと
+    //[self getUserLog];
+    [self dbGetStation];
 }
 
 
@@ -185,6 +224,10 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     
     UserLogData *userLogData = [UserLogData sharedCenter];
     
+    if([userLogData.stations count] == 0){
+        return ;
+    }
+    
     //開始点と終了点を結ぶ線を描画
     if(playLogNumber < [[userLogData stations] count]){
         
@@ -247,6 +290,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
             //再生スタート
             [myPlayer play];
             [self startTimer];
+            isPlaying = YES;
             
             //ステータスバーの色を変える
             [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleBlackOpaque animated:YES];
@@ -328,7 +372,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
         [logMapView setRegion:region];
         
         
-        UIAlertView *alllogalert = [[UIAlertView alloc] initWithTitle:nil message:@"これまでの行動範囲はこんな感じです" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+        UIAlertView *alllogalert = [[UIAlertView alloc] initWithTitle:nil message:@"あなたの行動範囲です。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
         
         [alllogalert show];
         [alllogalert release];
@@ -346,6 +390,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
 //再生終了時に呼ばれるデリゲートメソッド ナビゲーションバーをもとに戻す
 -(void) audioPlayerDidFinishPlaying:(AVAudioPlayer *)player successfully:(BOOL)flag{
     [self stopTimer];
+    isPlaying = NO;
     myPlayer.currentTime = 0;
     myPlayer = nil;
     
@@ -390,7 +435,18 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
 - (void) displayCurrentPlayingTime{
     if(myPlayer && myPlayer.isPlaying){
         sl.value = myPlayer.currentTime;
-        self.navigationItem.title = [NSString stringWithFormat:@"再生中 %f / %f", myPlayer.currentTime, myPlayer.duration];
+        int seconds = (int)myPlayer.currentTime % 60;
+        int minutes = (int)myPlayer.currentTime / 60;
+        int all_seconds = (int)myPlayer.duration % 60;
+        int all_minutes = (int)myPlayer.duration / 60;
+        int res_seconds = all_seconds - seconds;
+        int res_minutes = all_minutes - minutes;
+        if(res_seconds < 0){
+            res_seconds += 60;
+            res_minutes -= 1;
+        }
+    
+        self.navigationItem.title = [NSString stringWithFormat:@"再生中 %d:%02d / -%d:%02d", minutes, seconds, res_minutes,res_seconds];
         
         //アノテーションを動かす
         double curentUserLat = userLogAnnotation.coordinate.latitude + lat_gap_step;
@@ -424,6 +480,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
         //再生ストップ
         [myPlayer stop];
         [self stopTimer];
+        isPlaying = NO;
         myPlayer.currentTime = 0;
         myPlayer = nil;
         
@@ -467,112 +524,6 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     [self startTimer];
 }
 
-
-
-
-//ユーザのログデータを取得
--(void)getUserLog{
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
-    LocationData *locationData = [LocationData sharedCenter];
-    
-    NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/SetLog.php"];
-    ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
-    [request setPostValue:[NSString stringWithFormat:@"%@",locationData.account_name] forKey:@"account_name"];
-    [request setTimeOutSeconds:30];
-    [request setDelegate:self];
-    [request setDidFinishSelector:@selector(stationGetSucceeded:)];
-    [request setDidFailSelector:@selector(stationGetFailed:)];
-    [request setDefaultResponseEncoding:NSUTF8StringEncoding];
-    [request startAsynchronous];
-    [SVProgressHUD showWithStatus:@"ログを取得しています。"];
-
-}
-
-//リクエスト成功時
-- (void)stationGetSucceeded:(ASIFormDataRequest*)request
-{
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    [SVProgressHUD dismiss];
-    //帰ってきた文字列
-    NSString *resString = [request responseString];
-    if([resString length] == 0){
-        UIAlertView *notdataalert = [[UIAlertView alloc] initWithTitle:nil message:@"このアカウントのログデータはありません。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
-        
-        [notdataalert show];
-        [notdataalert release];
-        return;
-        
-    }
-    
-    //データを格納するシングルトン
-    UserLogData *userLogData = [UserLogData sharedCenter];
-    userLogData.stations = [[[NSMutableArray alloc]init] autorelease];
-    
-    //帰ってきたデータを';'でセパレート、アレイに格納
-   // NSMutableArray *gotStations = [[[NSMutableArray  alloc] init] autorelease];
-    NSMutableArray *gotStations = (NSMutableArray*)[resString componentsSeparatedByString:@";"];
-    
-    NSMutableDictionary *dict[[gotStations count]-1];
-    
-    //各データをkeyごとにディクショナリに追加
-    for(int i = 0; i < [gotStations count] - 1; i++){
-        dict[i] = [[[NSMutableDictionary alloc]init ]autorelease];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:0] forKey:@"from_lat"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:1] forKey:@"from_lon"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:2] forKey:@"from_name"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:3] forKey:@"from_date"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:4] forKey:@"to_lat"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:5] forKey:@"to_lon"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:6] forKey:@"to_name"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:7] forKey:@"to_date"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:8] forKey:@"file_name"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:9] forKey:@"date"];
-        [userLogData.stations addObject:dict[i]];
-    }
-    
-    NSLog(@"getUserLogSucceeded");
-    
-    
-    //取得した駅のアノテーションを追加
-    for(int i = 0; i < [userLogData.stations count]; i++){
-        [logMapView addAnnotation:
-         [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
-           ([[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lat"] doubleValue],
-            [[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lon"] doubleValue])
-                                                        title:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_name"]
-                                                     subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_date"]]
-           autorelease]];
-        [logMapView addAnnotation:
-         [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
-           ([[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lat"] doubleValue],
-            [[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lon"] doubleValue])
-                                                        title:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_name"]
-                                                     subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_date"]]
-          autorelease]];
-    }
-    
-    CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake([[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lat"] doubleValue] , [[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lon"] doubleValue]);
-    
-    [logMapView setCenterCoordinate:coordinate];
-    //mapviewの表示設定
-    MKCoordinateRegion region = MKCoordinateRegionMake(coordinate, MKCoordinateSpanMake(0.01, 0.01));
-    [logMapView setCenterCoordinate:coordinate];
-    [logMapView setRegion:region];
-
-}
-
-
-//リクエスト失敗時
-- (void)stationGetFailed:(ASIFormDataRequest*)request
-{
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    [SVProgressHUD dismiss];
-    UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:nil message:@"取得できませんでした。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
-    
-    [notgetalert show];
-    [notgetalert release];
-    NSLog(@"getUserLogFailed");
-}
 
 
 //レンジを設定
@@ -679,6 +630,215 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     if(temp_from_lon <= temp_to_lon) return temp_from_lon;
     else return temp_to_lon;
 }
+
+
+//DBへ接続する
+-(id) dbConnect{
+    BOOL success;
+    NSError *error;
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSArray  *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *writableDBPath = [documentsDirectory stringByAppendingPathComponent:@"BGSLogger.db"];
+    NSLog(@"%@",writableDBPath);
+    success = [fm fileExistsAtPath:writableDBPath];
+    if(!success){
+        NSString *defaultDBPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"BGSLogger.db"];
+        success = [fm copyItemAtPath:defaultDBPath toPath:writableDBPath error:&error];
+        if(!success){
+            NSLog(@"%@",[error localizedDescription]);
+        }
+    }
+    
+    FMDatabase* db = [FMDatabase databaseWithPath:writableDBPath];
+    return db;
+    
+}
+
+
+//DBからログ情報を取得
+-(void)dbGetStation{
+    
+    
+    //データを格納するシングルトン
+    UserLogData *userLogData = [UserLogData sharedCenter];
+    userLogData.stations = [[[NSMutableArray alloc]init] autorelease];
+    
+    FMDatabase* db  = [self dbConnect];
+    
+    if ([db open]) {
+        [db setShouldCacheStatements:YES];
+        
+        // SELECT
+        FMResultSet *rs = [db executeQuery:@"SELECT * FROM record_information"];
+        while ([rs next]) {
+            NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+            [dict setObject:[rs stringForColumn:@"from_lat"] forKey:@"from_lat"];
+            [dict setObject:[rs stringForColumn:@"from_lon"] forKey:@"from_lon"];
+            [dict setObject:[rs stringForColumn:@"to_lat"] forKey:@"to_lat"];
+            [dict setObject:[rs stringForColumn:@"to_lon"] forKey:@"to_lon"];
+            [dict setObject:[rs stringForColumn:@"from_name"] forKey:@"from_name"];
+            [dict setObject:[rs stringForColumn:@"to_name"] forKey:@"to_name"];
+            [dict setObject:[rs stringForColumn:@"file_name"] forKey:@"file_name"];
+            [dict setObject:[rs stringForColumn:@"from_date"] forKey:@"from_date"];
+            [dict setObject:[rs stringForColumn:@"to_date"] forKey:@"to_date"];
+            [dict setObject:[rs stringForColumn:@"date"] forKey:@"date"];
+            [userLogData.stations addObject:dict];
+        }
+        [rs close];
+        [db close];
+    }else{
+        NSLog(@"Could not open db.");
+    }
+    
+    if([userLogData.stations count] == 0) {
+        UIAlertView *notdataalert = [[UIAlertView alloc] initWithTitle:nil message:@"ログデータはありません。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+        
+        [notdataalert show];
+        [notdataalert release];
+        return ;
+    }
+    //取得した駅のアノテーションを追加
+    for(int i = 0; i < [userLogData.stations count]; i++){
+        [logMapView addAnnotation:
+         [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
+           ([[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lat"] doubleValue],
+            [[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lon"] doubleValue])
+                                                        title:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_name"]
+                                                     subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_date"]]
+          autorelease]];
+        [logMapView addAnnotation:
+         [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
+           ([[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lat"] doubleValue],
+            [[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lon"] doubleValue])
+                                                        title:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_name"]
+                                                     subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_date"]]
+          autorelease]];
+    }
+    
+    CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake([[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lat"] doubleValue] , [[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lon"] doubleValue]);
+    
+    [logMapView setCenterCoordinate:coordinate];
+    //mapviewの表示設定
+    MKCoordinateRegion region = MKCoordinateRegionMake(coordinate, MKCoordinateSpanMake(0.01, 0.01));
+    [logMapView setCenterCoordinate:coordinate];
+    [logMapView setRegion:region];
+    
+
+    
+}
+
+
+
+
+
+//---------------------------サーバーを使う場合----------------------------------------//
+/*
+ 
+ //ユーザのログデータを取得
+ -(void)getUserLog{
+ [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+ LocationData *locationData = [LocationData sharedCenter];
+ 
+ NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/SetLog.php"];
+ ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
+ [request setPostValue:[NSString stringWithFormat:@"%@",locationData.account_name] forKey:@"account_name"];
+ [request setTimeOutSeconds:30];
+ [request setDelegate:self];
+ [request setDidFinishSelector:@selector(stationGetSucceeded:)];
+ [request setDidFailSelector:@selector(stationGetFailed:)];
+ [request setDefaultResponseEncoding:NSUTF8StringEncoding];
+ [request startAsynchronous];
+ [SVProgressHUD showWithStatus:@"ログを取得しています。"];
+ 
+ }
+ 
+ //リクエスト成功時
+ - (void)stationGetSucceeded:(ASIFormDataRequest*)request
+ {
+ [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+ [SVProgressHUD dismiss];
+ //帰ってきた文字列
+ NSString *resString = [request responseString];
+ if([resString length] == 0){
+ UIAlertView *notdataalert = [[UIAlertView alloc] initWithTitle:nil message:@"このアカウントのログデータはありません。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+ 
+ [notdataalert show];
+ [notdataalert release];
+ return;
+ 
+ }
+ 
+ //データを格納するシングルトン
+ UserLogData *userLogData = [UserLogData sharedCenter];
+ userLogData.stations = [[[NSMutableArray alloc]init] autorelease];
+ 
+ //帰ってきたデータを';'でセパレート、アレイに格納
+ // NSMutableArray *gotStations = [[[NSMutableArray  alloc] init] autorelease];
+ NSMutableArray *gotStations = (NSMutableArray*)[resString componentsSeparatedByString:@";"];
+ 
+ NSMutableDictionary *dict[[gotStations count]-1];
+ 
+ //各データをkeyごとにディクショナリに追加
+ for(int i = 0; i < [gotStations count] - 1; i++){
+ dict[i] = [[[NSMutableDictionary alloc]init ]autorelease];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:0] forKey:@"from_lat"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:1] forKey:@"from_lon"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:2] forKey:@"from_name"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:3] forKey:@"from_date"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:4] forKey:@"to_lat"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:5] forKey:@"to_lon"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:6] forKey:@"to_name"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:7] forKey:@"to_date"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:8] forKey:@"file_name"];
+ [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:9] forKey:@"date"];
+ [userLogData.stations addObject:dict[i]];
+ }
+ 
+ NSLog(@"getUserLogSucceeded");
+ 
+ 
+ //取得した駅のアノテーションを追加
+ for(int i = 0; i < [userLogData.stations count]; i++){
+ [logMapView addAnnotation:
+ [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
+ ([[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lat"] doubleValue],
+ [[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lon"] doubleValue])
+ title:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_name"]
+ subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_date"]]
+ autorelease]];
+ [logMapView addAnnotation:
+ [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
+ ([[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lat"] doubleValue],
+ [[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lon"] doubleValue])
+ title:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_name"]
+ subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_date"]]
+ autorelease]];
+ }
+ 
+ CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake([[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lat"] doubleValue] , [[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lon"] doubleValue]);
+ 
+ [logMapView setCenterCoordinate:coordinate];
+ //mapviewの表示設定
+ MKCoordinateRegion region = MKCoordinateRegionMake(coordinate, MKCoordinateSpanMake(0.01, 0.01));
+ [logMapView setCenterCoordinate:coordinate];
+ [logMapView setRegion:region];
+ 
+ }
+ 
+ 
+ //リクエスト失敗時
+ - (void)stationGetFailed:(ASIFormDataRequest*)request
+ {
+ [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+ [SVProgressHUD dismiss];
+ UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:nil message:@"取得できませんでした。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+ 
+ [notgetalert show];
+ [notgetalert release];
+ NSLog(@"getUserLogFailed");
+ }
+ */
 
 
 

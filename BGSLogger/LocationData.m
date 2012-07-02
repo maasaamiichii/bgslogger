@@ -21,7 +21,7 @@
 @synthesize to_name;
 @synthesize from_date;
 @synthesize to_date;
-@synthesize account_name;
+//@synthesize account_name;
 
 static LocationData* sharedInstance = nil;
 

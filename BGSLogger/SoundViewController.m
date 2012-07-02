@@ -12,6 +12,8 @@
 #import "ASIFormDataRequest.h"
 #import "ASINetworkQueue.h"
 #import "SVProgressHUD.h"
+#import "FMDB/FMDatabase.h"
+#import "FMDB/FMDatabaseAdditions.h"
 
 @interface SoundViewController ()
 
@@ -37,19 +39,17 @@
 	// Do any additional setup after loading the view.
     
     // navigation Barの右側に[Edit]ボタンを表示する。
-    self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemEdit target:self action:@selector(editAlert)] autorelease];
+    self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(editAlert)] autorelease];
     
     
     
     soundTable.delegate = self;
     soundTable.dataSource = self;
     
-    UserLogData *userLogData = [UserLogData sharedCenter];
-    if([userLogData.stations count] == 0){
-        UIAlertView *nonalert = [[UIAlertView alloc] initWithTitle:nil message:@"LogViewerでログデータをロードしてください" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
-        [nonalert show];
-        [nonalert release];
-    }
+    //ナビゲーションバーのタイトルをセット
+    self.navigationItem.title = @"Sound Files";
+    [self.navigationController.navigationBar setTintColor:[UIColor colorWithRed:0.7 green:0.0 blue:1.0 alpha:1.0]];
+    
 }
 
 -(void)viewWillAppear:(BOOL)animated{
@@ -65,6 +65,7 @@
     if(error){
         NSLog(@"audioSession: %@ %d %@", [error domain], [error code], [[error userInfo] description]);
     }
+    [self dbGetStation];
 
     [soundTable reloadData];
 }
@@ -192,7 +193,7 @@
     [actionSheet addSubview:sl];
     
     if( orientation == UIInterfaceOrientationLandscapeRight || orientation == UIInterfaceOrientationLandscapeLeft ){
-        //スライダーを追加
+        //ラベル追加
         leftLabel = [[UILabel alloc] initWithFrame:CGRectMake(10.0f, 20.0f, 45.0f, 20.0f)];
 
     }
@@ -267,8 +268,14 @@
     if(myPlayer && myPlayer.isPlaying){
         int seconds = (int)myPlayer.currentTime % 60;
         int minutes = (int)myPlayer.currentTime / 60;
-        int res_seconds = (int)(myPlayer.duration - myPlayer.currentTime) % 60;
-        int res_minutes = (int)(myPlayer.duration - myPlayer.currentTime) / 60;
+        int all_seconds = (int)myPlayer.duration % 60;
+        int all_minutes = (int)myPlayer.duration / 60;
+        int res_seconds = all_seconds - seconds;
+        int res_minutes = all_minutes - minutes;
+        if(res_seconds < 0){
+            res_seconds += 60;
+            res_minutes -= 1;
+        }
         
         leftLabel.text = [NSString stringWithFormat:@"%d:%02d", minutes, seconds];
         rightLabel.text = [NSString stringWithFormat:@"-%d:%02d", res_minutes,res_seconds];
@@ -288,6 +295,8 @@
     [self startTimer];
 }
 
+
+//アクションシートのボタンが押された時の処理
 -(void)actionSheet:(UIActionSheet*)actionSheet
 clickedButtonAtIndex:(NSInteger)buttonIndex {
     
@@ -308,11 +317,24 @@ clickedButtonAtIndex:(NSInteger)buttonIndex {
     
 }
 
+
+//編集時にログも消えるアラートを表示
 -(void)editAlert{
+    
+    UserLogData *userLogData = [UserLogData sharedCenter];
+    NSLog(@"%d",[userLogData.stations count]);
+    if([userLogData.stations count] == 0){
+        return;
+    }
+    
+    NSLog(@"%d",[userLogData.stations count]);
+    
     UIAlertView *editalert = [[UIAlertView alloc] initWithTitle:nil message:@"音声ファイルを削除するとログデータも削除されます。" delegate:self cancelButtonTitle:nil otherButtonTitles:@"OK", nil];
     [editalert show];
     [editalert release];
 }
+
+
 
 -(void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     
@@ -327,20 +349,30 @@ clickedButtonAtIndex:(NSInteger)buttonIndex {
 }
 
 
+//編集モードスタート
 -(void)startEditing{
-    // 編集モードにする
+    
+    UserLogData *userLogData = [UserLogData sharedCenter];
+    NSLog(@"%d",[userLogData.stations count]);
+    if([userLogData.stations count] == 0){
+        return;
+    }
+    
+
 	[self.soundTable setEditing:YES animated:YES];
 	
     // navigation Barの右側に[Done]ボタンを表示する。
 	self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(stopEditing)] autorelease];
 }
 
+
+// 編集モードストップ
 -(void)stopEditing{
-    // 編集モードをやめる
+    
 	[self.soundTable setEditing:NO animated:YES];
     
 	// navigation Barの右側に[Edit]ボタンを表示する。
-	self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemEdit target:self action:@selector(startEditing)] autorelease];
+	self.navigationItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(startEditing)] autorelease];
 }
 
 
@@ -357,7 +389,9 @@ clickedButtonAtIndex:(NSInteger)buttonIndex {
         NSString *documentDir = [filePaths objectAtIndex:0];
         NSString *path = [documentDir stringByAppendingPathComponent:[[userLogData.stations objectAtIndex:indexPath.row] objectForKey:@"file_name"]];
         [fileManager removeItemAtPath: path error:NULL];
-        [self deleteUserLog];
+        
+        //ファイル、ログ削除
+        [self deleteDB];
         
         
         [userLogData.stations removeObjectAtIndex:indexPath.row]; // 削除ボタンが押された行のデータを配列から削除します。
@@ -366,50 +400,142 @@ clickedButtonAtIndex:(NSInteger)buttonIndex {
 	}
 }
 
-
-//ユーザのログデータを取得
--(void)deleteUserLog{
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
-    NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/DeleteLog.php"];
-    ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
-    [request setPostValue:deleteFile forKey:@"file_name"];
-    NSLog(@"%@",deleteFile);
-    [request setTimeOutSeconds:30];
-    [request setDelegate:self];
-    [request setDidFinishSelector:@selector(deleteSucceeded:)];
-    [request setDidFailSelector:@selector(deleteFailed:)];
-    [request setDefaultResponseEncoding:NSUTF8StringEncoding];
-    [request startAsynchronous];
-    [SVProgressHUD showWithStatus:@"ログを消去しています。"];
+//DBへ接続する
+-(id) dbConnect{
+    BOOL success;
+    NSError *error;
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSArray  *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *writableDBPath = [documentsDirectory stringByAppendingPathComponent:@"BGSLogger.db"];
+    NSLog(@"%@",writableDBPath);
+    success = [fm fileExistsAtPath:writableDBPath];
+    if(!success){
+        NSString *defaultDBPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"BGSLogger.db"];
+        success = [fm copyItemAtPath:defaultDBPath toPath:writableDBPath error:&error];
+        if(!success){
+            NSLog(@"%@",[error localizedDescription]);
+        }
+    }
+    
+    FMDatabase* db = [FMDatabase databaseWithPath:writableDBPath];
+    return db;
     
 }
 
 
-//リクエスト成功時
-- (void)deleteSucceeded:(ASIFormDataRequest*)request
-{
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    [SVProgressHUD dismiss];
-    //帰ってきた文字列
-    NSString *resString = [request responseString];
-    NSLog(@"%@",resString);
-    UIAlertView *deletealert = [[UIAlertView alloc] initWithTitle:nil message:@"ログを削除しました。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
-    [deletealert show];
-    [deletealert release];
-    NSLog(@"DeleteLogSucceeded");
+//DBから音声ファイル、ログデータ削除
+-(void)deleteDB{
+    
+    FMDatabase* db  = [self dbConnect];
+    NSString*   sql = @"delete from record_information where file_name = ?";
+    
+    
+    
+    if ([db open]) {
+        [db setShouldCacheStatements:YES];
+        
+        [db executeUpdate:sql, deleteFile];
+        [db close];
+    }else{
+        NSLog(@"Could not open db.");
+    }
+
 }
 
 
-//リクエスト失敗時
-- (void)deleteFailed:(ASIFormDataRequest*)request
-{
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    [SVProgressHUD dismiss];
-    UIAlertView *notdeletealert = [[UIAlertView alloc] initWithTitle:nil message:@"削除できませんでした。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
-    [notdeletealert show];
-    [notdeletealert release];
-    NSLog(@"DeleteLogFailed");
+//DBからログ情報を取得
+-(void)dbGetStation{
+    
+    
+    //データを格納するシングルトン
+    UserLogData *userLogData = [UserLogData sharedCenter];
+    userLogData.stations = [[[NSMutableArray alloc]init] autorelease];
+    
+    FMDatabase* db  = [self dbConnect];
+    
+    if ([db open]) {
+        [db setShouldCacheStatements:YES];
+        
+        // SELECT
+        FMResultSet *rs = [db executeQuery:@"SELECT * FROM record_information"];
+        while ([rs next]) {
+            NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+            [dict setObject:[rs stringForColumn:@"from_lat"] forKey:@"from_lat"];
+            [dict setObject:[rs stringForColumn:@"from_lon"] forKey:@"from_lon"];
+            [dict setObject:[rs stringForColumn:@"to_lat"] forKey:@"to_lat"];
+            [dict setObject:[rs stringForColumn:@"to_lon"] forKey:@"to_lon"];
+            [dict setObject:[rs stringForColumn:@"from_name"] forKey:@"from_name"];
+            [dict setObject:[rs stringForColumn:@"to_name"] forKey:@"to_name"];
+            [dict setObject:[rs stringForColumn:@"file_name"] forKey:@"file_name"];
+            [dict setObject:[rs stringForColumn:@"from_date"] forKey:@"from_date"];
+            [dict setObject:[rs stringForColumn:@"to_date"] forKey:@"to_date"];
+            [dict setObject:[rs stringForColumn:@"date"] forKey:@"date"];
+            [userLogData.stations addObject:dict];
+        }
+        [rs close];
+        [db close];
+    }else{
+        NSLog(@"Could not open db.");
+    }
+    
+    if([userLogData.stations count] == 0) {
+        UIAlertView *notdataalert = [[UIAlertView alloc] initWithTitle:nil message:@"ログデータはありません。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+        
+        [notdataalert show];
+        [notdataalert release];
+        return ;
+    }
 }
+
+
+
+
+/*
+ //ユーザのログデータを取得
+ -(void)deleteUserLog{
+ [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+ NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/DeleteLog.php"];
+ ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
+ [request setPostValue:deleteFile forKey:@"file_name"];
+ NSLog(@"%@",deleteFile);
+ [request setTimeOutSeconds:30];
+ [request setDelegate:self];
+ [request setDidFinishSelector:@selector(deleteSucceeded:)];
+ [request setDidFailSelector:@selector(deleteFailed:)];
+ [request setDefaultResponseEncoding:NSUTF8StringEncoding];
+ [request startAsynchronous];
+ [SVProgressHUD showWithStatus:@"ログを消去しています。"];
+ 
+ }
+ 
+ 
+ //リクエスト成功時
+ - (void)deleteSucceeded:(ASIFormDataRequest*)request
+ {
+ [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+ [SVProgressHUD dismiss];
+ //帰ってきた文字列
+ NSString *resString = [request responseString];
+ NSLog(@"%@",resString);
+ UIAlertView *deletealert = [[UIAlertView alloc] initWithTitle:nil message:@"ログを削除しました。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+ [deletealert show];
+ [deletealert release];
+ NSLog(@"DeleteLogSucceeded");
+ }
+ 
+ 
+ //リクエスト失敗時
+ - (void)deleteFailed:(ASIFormDataRequest*)request
+ {
+ [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+ [SVProgressHUD dismiss];
+ UIAlertView *notdeletealert = [[UIAlertView alloc] initWithTitle:nil message:@"削除できませんでした。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+ [notdeletealert show];
+ [notdeletealert release];
+ NSLog(@"DeleteLogFailed");
+ }
+ */
 
 
 

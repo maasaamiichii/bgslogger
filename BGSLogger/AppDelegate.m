@@ -8,13 +8,17 @@
 
 #import "AppDelegate.h"
 #import "MapViewController.h"
+#import "FMDB/FMDatabase.h"
+#import "FMDB/FMDatabaseAdditions.h"
 
 @implementation AppDelegate
 
 @synthesize window = _window;
 
+
 - (void)dealloc
 {
+    
     [_window release];
     [super dealloc];
 }
@@ -22,6 +26,15 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     // Override point for customization after application launch.
+    NSLog(@"applicationDidFinishruanvh");
+    
+    //起動と同時にDBファイル作成
+    FMDatabase* db  = [self dbConnect];
+    NSString*   sql = @"CREATE TABLE IF NOT EXISTS record_information (id integer primary key autoincrement, from_lat text, from_lon text, to_lat text, to_lon text, from_name text, to_name text, file_name text, from_date text, to_date text, date text);";
+    [db open];
+    [db executeUpdate:sql];
+    [db close];
+
     return YES;
 }
 							
@@ -57,7 +70,32 @@
 
 - (void)applicationWillTerminate:(UIApplication *)application
 {
+    
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
+
+//DBへ接続する
+-(id) dbConnect{
+    BOOL success;
+    NSError *error;
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSArray  *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *writableDBPath = [documentsDirectory stringByAppendingPathComponent:@"BGSLogger.db"];
+    NSLog(@"%@",writableDBPath);
+    success = [fm fileExistsAtPath:writableDBPath];
+    if(!success){
+        NSString *defaultDBPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"BGSLogger.db"];
+        success = [fm copyItemAtPath:defaultDBPath toPath:writableDBPath error:&error];
+        if(!success){
+            NSLog(@"%@",[error localizedDescription]);
+        }
+    }
+    
+    FMDatabase* db = [FMDatabase databaseWithPath:writableDBPath];
+    return db;
+    
+}
+
 
 @end

@@ -22,7 +22,7 @@
     NSString *to_name;
     NSString *from_date;
     NSString *to_date;
-    NSString *account_name;//アカウント名
+    //NSString *account_name;//アカウント名
     
 }
 
@@ -38,7 +38,7 @@
 @property(retain,nonatomic) NSString *to_name;
 @property(retain,nonatomic) NSString *from_date;
 @property(retain,nonatomic) NSString *to_date;
-@property(retain,nonatomic) NSString *account_name;
+//@property(retain,nonatomic) NSString *account_name;
 
 
 + (id)sharedCenter;

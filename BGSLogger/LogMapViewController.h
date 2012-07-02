@@ -28,7 +28,8 @@
     double initial_lon; //ユーザ位置アノテーションの初期位置　緯度
     double lat_gap_step; //アノテーションを一回のタイマーで移動させる量 経度
     double lon_gap_step; //アノテーションを一回のタイマーで移動させる量 緯度
-    
+    NSString *dbRes;
+    Boolean isPlaying;
     
 }
 
@@ -37,12 +38,13 @@
 @property (retain, nonatomic) NSTimer *playTimer;
 @property (retain, nonatomic) CustomAnnotation *userLogAnnotation;
 @property (retain, nonatomic) UISlider *sl;
-
+@property (retain, nonatomic) AVAudioPlayer *myPlayer;
+@property (readwrite) Boolean isPlaying;
 
 - (IBAction)playLog:(id)sender;
 
 
--(void)getUserLog; //ユーザのログを取得
+//-(void)getUserLog; //ユーザのログを取得
 -(double)range1:(double)gap1 range2:(double)gap2; //ラインを描画したときの地図の表示範囲を取得
 -(void) startTimer; //プレイ時のタイマーをスタート
 -(void) stopTimer; //プレイ時のタイマーをストップ
