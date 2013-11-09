@@ -12,7 +12,6 @@
 #import <CoreLocation/CLGeocoder.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreAudio/CoreAudioTypes.h>
-//#import "IASKAppSettingsViewController.h"
 
 
 
@@ -33,7 +32,6 @@
 @property (nonatomic, retain) CLLocationManager *locationManager;
 @property (retain, nonatomic) NSTimer *timer;
 @property (retain, nonatomic) IBOutlet MKMapView *mapView;
-//@property (nonatomic, retain) IASKAppSettingsViewController *appSettingsViewController;
 @property (nonatomic,retain) UIButton *accessoryBtn;
 
 
@@ -45,8 +43,7 @@
 -(void) startTimer; //レコード時のタイマーをスタート
 -(void) stopTimer; //レコード時のタイマーをストップ
 -(void) displayCurrentRecordingTime; //現在のレコード、プレイ時間を表示
--(void) getNearStations:(CLLocation*) location; //現在地の近くの駅情報を取得
-//-(void) postUserLocation; //ユーザの位置情報、音声ファイル情報をサーバーにポスト
+-(void) getNearStationsFromDB:(CLLocation*) location; //現在地の近くの駅情報を取得
 
 @end
 

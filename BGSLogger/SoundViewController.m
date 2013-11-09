@@ -8,10 +8,6 @@
 
 #import "SoundViewController.h"
 #import "UserLogData.h"
-#import "ASIFormDataRequest.h"
-#import "ASIFormDataRequest.h"
-#import "ASINetworkQueue.h"
-#import "SVProgressHUD.h"
 #import "FMDB/FMDatabase.h"
 #import "FMDB/FMDatabaseAdditions.h"
 
@@ -168,7 +164,7 @@
     actionSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
     
     //現在の向きを取得
-    UIInterfaceOrientation orientation = [[UIDevice currentDevice] orientation];
+    UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
     
     if( orientation == UIInterfaceOrientationLandscapeRight || orientation == UIInterfaceOrientationLandscapeLeft ){
         //スライダーを追加
@@ -487,55 +483,6 @@ clickedButtonAtIndex:(NSInteger)buttonIndex {
         return ;
     }
 }
-
-
-
-
-/*
- //ユーザのログデータを取得
- -(void)deleteUserLog{
- [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
- NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/DeleteLog.php"];
- ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
- [request setPostValue:deleteFile forKey:@"file_name"];
- NSLog(@"%@",deleteFile);
- [request setTimeOutSeconds:30];
- [request setDelegate:self];
- [request setDidFinishSelector:@selector(deleteSucceeded:)];
- [request setDidFailSelector:@selector(deleteFailed:)];
- [request setDefaultResponseEncoding:NSUTF8StringEncoding];
- [request startAsynchronous];
- [SVProgressHUD showWithStatus:@"ログを消去しています。"];
- 
- }
- 
- 
- //リクエスト成功時
- - (void)deleteSucceeded:(ASIFormDataRequest*)request
- {
- [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
- [SVProgressHUD dismiss];
- //帰ってきた文字列
- NSString *resString = [request responseString];
- NSLog(@"%@",resString);
- UIAlertView *deletealert = [[UIAlertView alloc] initWithTitle:nil message:@"ログを削除しました。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
- [deletealert show];
- [deletealert release];
- NSLog(@"DeleteLogSucceeded");
- }
- 
- 
- //リクエスト失敗時
- - (void)deleteFailed:(ASIFormDataRequest*)request
- {
- [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
- [SVProgressHUD dismiss];
- UIAlertView *notdeletealert = [[UIAlertView alloc] initWithTitle:nil message:@"削除できませんでした。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
- [notdeletealert show];
- [notdeletealert release];
- NSLog(@"DeleteLogFailed");
- }
- */
 
 
 

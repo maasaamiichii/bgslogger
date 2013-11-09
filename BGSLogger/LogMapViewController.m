@@ -7,10 +7,7 @@
 //
 
 #import "LogMapViewController.h"
-//#import "ASIFormDataRequest.h"
-//#import "ASINetworkQueue.h"
 #import "UserLogData.h"
-#import "SVProgressHUD.h"
 #import "LocationData.h"
 #import "CustomAnnotationView.h"
 #import "FMDB/FMDatabase.h"
@@ -91,6 +88,8 @@ static void interruption(void *inClientData, UInt32 inInterruptioState){
     line = nil;
     
     userLogAnnotation = [[CustomAnnotation alloc] initWithLocationCoordinate:CLLocationCoordinate2DMake(0,0) title:@"移動中" subtitle:nil];
+    int height = self.view.frame.size.height;
+    NSLog(@"%d", height);
 
 }
 
@@ -187,9 +186,7 @@ static void interruption(void *inClientData, UInt32 inInterruptioState){
             //再利用可能な MKAnnotationView がなければ新規作成
             annotationView = [[[CustomAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:identifier] autorelease];
         }
-        //アノテーションを動かすためのおまじない
-        [annotation willChangeValueForKey:@"coordinate"];
-        [annotation didChangeValueForKey:@"coordinate"];
+        
         
         
         annotationView.annotation = annotation;
@@ -301,16 +298,31 @@ static void interruption(void *inClientData, UInt32 inInterruptioState){
              self.navigationItem.rightBarButtonItem = btn;
            
             //現在の向きを取得
-            UIInterfaceOrientation orientation = [[UIDevice currentDevice] orientation];
+            UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
             
             if( orientation == UIInterfaceOrientationLandscapeRight || orientation == UIInterfaceOrientationLandscapeLeft ){
                 //スライダーを追加
-                sl = [[UISlider alloc] initWithFrame:CGRectMake(20, 190, 440, 10)];
+                int width = self.view.frame.size.width;
+                NSLog(@"%d", width);
+                if(width == 568)
+                {
+                sl = [[UISlider alloc] initWithFrame:CGRectMake(20, self.view.frame.size.height - 100, self.view.frame.size.width - 20, 10)];
+                }
+                else
+                {
+                    sl = [[UISlider alloc] initWithFrame:CGRectMake(20, self.view.frame.size.height - 50, self.view.frame.size.width - 20, 10)];
+                }
             }
             else{
                 //スライダーを追加
-                sl = [[UISlider alloc] initWithFrame:CGRectMake(10, 330, 300, 10)];
-                
+                int height = self.view.frame.size.height;
+                NSLog(@"%d", height);
+                if(height == 548 || height == 568){
+                    sl = [[UISlider alloc] initWithFrame:CGRectMake(10, self.view.frame.size.height - 100, 300, 10)];
+                }
+                else{
+                    sl = [[UISlider alloc] initWithFrame:CGRectMake(10, self.view.frame.size.height - 50, 300, 10)];
+                }
             }
             sl.minimumValue = 0.0;  // 最小値を0に設定
             sl.maximumValue = myPlayer.duration;  // 最大値をファイルの長さに設定
@@ -458,14 +470,32 @@ static void interruption(void *inClientData, UInt32 inInterruptioState){
         [logMapView addAnnotation:userLogAnnotation];
         
         //現在の向きを取得
-        UIInterfaceOrientation orientation = [[UIDevice currentDevice] orientation];
+        UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
         
         //画面の向きに応じてスライダーの位置を変更する
         if( orientation == UIInterfaceOrientationLandscapeRight || orientation == UIInterfaceOrientationLandscapeLeft ){
-            sl.frame = CGRectMake(20, 190, 440, 10);
+            int width = self.view.frame.size.width;
+            NSLog(@"%d", width);
+            if(width == 568)
+            {
+                sl.frame = CGRectMake(20, self.view.frame.size.height - 100, self.view.frame.size.width - 20, 10);
+            }
+            else
+            {
+                sl.frame = CGRectMake(20, self.view.frame.size.height - 50, self.view.frame.size.width - 20, 10);
+            }
         }
         else{
-            sl.frame = CGRectMake(10, 330, 300, 10);
+            int height = self.view.frame.size.height;
+            NSLog(@"%d", height);
+            if(height == 548 || height == 568)
+            {
+                sl.frame = CGRectMake(10, self.view.frame.size.height - 100, 300, 10);
+            }
+            else
+            {
+                sl.frame = CGRectMake(10, self.view.frame.size.height - 50, 300, 10);
+            }
             
         }
 
@@ -727,122 +757,5 @@ static void interruption(void *inClientData, UInt32 inInterruptioState){
 
     
 }
-
-
-
-
-
-//---------------------------サーバーを使う場合----------------------------------------//
-/*
- 
- //ユーザのログデータを取得
- -(void)getUserLog{
- [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
- LocationData *locationData = [LocationData sharedCenter];
- 
- NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/SetLog.php"];
- ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
- [request setPostValue:[NSString stringWithFormat:@"%@",locationData.account_name] forKey:@"account_name"];
- [request setTimeOutSeconds:30];
- [request setDelegate:self];
- [request setDidFinishSelector:@selector(stationGetSucceeded:)];
- [request setDidFailSelector:@selector(stationGetFailed:)];
- [request setDefaultResponseEncoding:NSUTF8StringEncoding];
- [request startAsynchronous];
- [SVProgressHUD showWithStatus:@"ログを取得しています。"];
- 
- }
- 
- //リクエスト成功時
- - (void)stationGetSucceeded:(ASIFormDataRequest*)request
- {
- [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
- [SVProgressHUD dismiss];
- //帰ってきた文字列
- NSString *resString = [request responseString];
- if([resString length] == 0){
- UIAlertView *notdataalert = [[UIAlertView alloc] initWithTitle:nil message:@"このアカウントのログデータはありません。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
- 
- [notdataalert show];
- [notdataalert release];
- return;
- 
- }
- 
- //データを格納するシングルトン
- UserLogData *userLogData = [UserLogData sharedCenter];
- userLogData.stations = [[[NSMutableArray alloc]init] autorelease];
- 
- //帰ってきたデータを';'でセパレート、アレイに格納
- // NSMutableArray *gotStations = [[[NSMutableArray  alloc] init] autorelease];
- NSMutableArray *gotStations = (NSMutableArray*)[resString componentsSeparatedByString:@";"];
- 
- NSMutableDictionary *dict[[gotStations count]-1];
- 
- //各データをkeyごとにディクショナリに追加
- for(int i = 0; i < [gotStations count] - 1; i++){
- dict[i] = [[[NSMutableDictionary alloc]init ]autorelease];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:0] forKey:@"from_lat"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:1] forKey:@"from_lon"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:2] forKey:@"from_name"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:3] forKey:@"from_date"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:4] forKey:@"to_lat"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:5] forKey:@"to_lon"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:6] forKey:@"to_name"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:7] forKey:@"to_date"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:8] forKey:@"file_name"];
- [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@","] objectAtIndex:9] forKey:@"date"];
- [userLogData.stations addObject:dict[i]];
- }
- 
- NSLog(@"getUserLogSucceeded");
- 
- 
- //取得した駅のアノテーションを追加
- for(int i = 0; i < [userLogData.stations count]; i++){
- [logMapView addAnnotation:
- [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
- ([[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lat"] doubleValue],
- [[[userLogData.stations objectAtIndex:i] objectForKey:@"from_lon"] doubleValue])
- title:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_name"]
- subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"from_date"]]
- autorelease]];
- [logMapView addAnnotation:
- [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
- ([[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lat"] doubleValue],
- [[[userLogData.stations objectAtIndex:i] objectForKey:@"to_lon"] doubleValue])
- title:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_name"]
- subtitle:[[userLogData.stations objectAtIndex:i] objectForKey:@"to_date"]]
- autorelease]];
- }
- 
- CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake([[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lat"] doubleValue] , [[[userLogData.stations objectAtIndex:0] objectForKey:@"from_lon"] doubleValue]);
- 
- [logMapView setCenterCoordinate:coordinate];
- //mapviewの表示設定
- MKCoordinateRegion region = MKCoordinateRegionMake(coordinate, MKCoordinateSpanMake(0.01, 0.01));
- [logMapView setCenterCoordinate:coordinate];
- [logMapView setRegion:region];
- 
- }
- 
- 
- //リクエスト失敗時
- - (void)stationGetFailed:(ASIFormDataRequest*)request
- {
- [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
- [SVProgressHUD dismiss];
- UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:nil message:@"取得できませんでした。" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
- 
- [notgetalert show];
- [notgetalert release];
- NSLog(@"getUserLogFailed");
- }
- */
-
-
-
-
-
 
 @end

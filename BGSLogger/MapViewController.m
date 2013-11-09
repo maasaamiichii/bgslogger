@@ -9,12 +9,7 @@
 #import "MapViewController.h"
 #import "CustomAnnotation.h"
 #import "LocationData.h"
-#import "ASIFormDataRequest.h"
-#import "ASINetworkQueue.h"
 #import <MessageUI/MessageUI.h>
-#import "IASKSpecifier.h"
-#import "IASKSettingsReader.h"
-#import "SVProgressHUD.h"
 #import "FMDB/FMDatabase.h"
 #import "FMDB/FMDatabaseAdditions.h"
 
@@ -28,7 +23,6 @@
 @synthesize mapView;
 @synthesize locationManager;
 @synthesize timer;
-//@synthesize appSettingsViewController;
 @synthesize accessoryBtn;
 
 static const NSInteger kTagAlert1 = 1; //録音開始アラート
@@ -52,20 +46,6 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
-    
-    
-    
-    
-    
-    //アカウント名取得
-    //NSUserDefaults* userDefaults = [NSUserDefaults standardUserDefaults];
-    //[userDefaults removeObjectForKey:@"AccountName"];
-    //[userDefaults synchronize];
-
-    //LocationData *locationData = [LocationData sharedCenter];
-    //locationData.account_name = [NSString stringWithFormat:@"%@",[userDefaults stringForKey: @"AccountName"]];
-    
         
     //locationManager初期化
     locationManager = [[CLLocationManager alloc] init];
@@ -174,7 +154,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     [mapView setRegion:region];
     
     //現在地の近くの駅を取得
-    [self getNearStations:newLocation];
+    [self getNearStationsFromDB:newLocation];
     
         
     //更新をやめる
@@ -201,7 +181,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     MKAnnotationView* annotationView = [self.mapView viewForAnnotation:userLocation];
     
     //UIImageを指定した生成例
-    UIImage *image;
+    UIImage *image = [[UIImage alloc] init];
     
     if(!myRecorder.isRecording){
         image = [UIImage imageNamed:@"rec.png"];
@@ -273,7 +253,7 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
             pav.canShowCallout = YES;  // ピンタップ時にコールアウトを表示する
         
             //rec.pngをアクセサリーボタンの画像にセット
-            UIImage *image;
+            UIImage *image = [[UIImage alloc] init];
             if(!myRecorder.isRecording){
                 image = [UIImage imageNamed:@"rec.png"];
             }
@@ -580,122 +560,58 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     
 }
 
-
-
-
-//現在地の近くの駅を取得
--(void)getNearStations:(CLLocation*) location{
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
-    NSURL *url = [NSURL URLWithString:@"http://www.uetamasamichi.com/bgslogger/SetStations.php"];
-    ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
-    [request setUsername:@"uetamasamichi"];
-    [request setPassword:@"haruka"];
-    [request setPostValue:[NSString stringWithFormat:@"%f", location.coordinate.latitude] forKey:@"user_lat"];
-    [request setPostValue:[NSString stringWithFormat:@"%f", location.coordinate.longitude] forKey:@"user_lon"];
+-(void) getNearStationsFromDB:(CLLocation*) location{
+    FMDatabase* db  = [self dbConnect];
     
-    [request setTimeOutSeconds:30];
-    [request setDelegate:self];
-    [request setDidFinishSelector:@selector(stationGetSucceeded:)];
-    [request setDidFailSelector:@selector(stationGetFailed:)];
-    [request setDefaultResponseEncoding:NSUTF8StringEncoding];
-    [request startAsynchronous];
-    [SVProgressHUD showWithStatus:@"近くの駅を取得しています。"];
+    NSString  *low_lat = [NSString stringWithFormat:@"%f",location.coordinate.latitude - 0.01] ;
+    NSString  *high_lat = [NSString stringWithFormat:@"%f",location.coordinate.latitude + 0.01] ;
+    NSString  *low_lon = [NSString stringWithFormat:@"%f",location.coordinate.longitude - 0.01] ;
+    NSString  *high_lon = [NSString stringWithFormat:@"%f",location.coordinate.longitude + 0.01] ;
     
-}
-
-
-
-//リクエスト成功時
-- (void)stationGetSucceeded:(ASIFormDataRequest*)request
-{
-    [SVProgressHUD dismiss];
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
     
-    //帰ってきた文字列
-    NSString *resString = [request responseString];
-    
-    //データを格納するシングルトン
-    LocationData *locationData = [LocationData sharedCenter];
-    locationData.nearStations = [[[NSMutableArray alloc]init] autorelease];
-    
-    //帰ってきたデータを';'でセパレート、アレイに格納
-    NSMutableArray*gotStations = (NSMutableArray*)[resString componentsSeparatedByString:@";"];
-    
-    NSMutableDictionary *dict[[gotStations count]-1];
-    
-    //各データをkeyごとにディクショナリに追加
-    for(int i = 0; i < [gotStations count] - 1; i++){
-        dict[i] = [[[NSMutableDictionary alloc]init ]autorelease];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:0] forKey:@"station_name"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:1] forKey:@"line_name"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:2] forKey:@"lat"];
-        [dict[i] setObject:[[[gotStations objectAtIndex:i] componentsSeparatedByString:@"_"] objectAtIndex:3] forKey:@"lon"];
-        [locationData.nearStations addObject:dict[i]];
-    }    
-    
-    //取得した駅のアノテーションを追加
-    for(int i = 0; i < [locationData.nearStations count]; i++){
-         [mapView addAnnotation:
-            [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
-                                                ([[[locationData.nearStations objectAtIndex:i] objectForKey:@"lat"] doubleValue],
-                                                 [[[locationData.nearStations objectAtIndex:i] objectForKey:@"lon"] doubleValue])
-                                                 title:[[locationData.nearStations objectAtIndex:i] objectForKey:@"station_name"]
-                                                 subtitle:[[locationData.nearStations objectAtIndex:i] objectForKey:@"line_name"]
-                                                 ]autorelease]];
+    if ([db open]) {
+        [db setShouldCacheStatements:YES];
+        
+        // SELECT
+        NSString *sql = @"SELECT station_name, GROUP_CONCAT(line_name) as line_name, lat, lon FROM station WHERE lat between ? and ? and lon between ? and ? group by station_name";
+        FMResultSet *rs = [db executeQuery:sql, low_lat, high_lat, low_lon, high_lon];
+        
+        //データを格納するシングルトン
+        LocationData *locationData = [LocationData sharedCenter];
+        locationData.nearStations = [[[NSMutableArray alloc]init] autorelease];
+        
+        while ([rs next]) {
+            
+            NSMutableDictionary *dic = [NSMutableDictionary dictionary];
+            [dic setObject:[rs stringForColumn:@"station_name"] forKey:@"station_name"];
+            [dic setObject:[rs stringForColumn:@"line_name"] forKey:@"line_name"];
+            [dic setObject:[rs stringForColumn:@"lat"] forKey:@"lat"];
+            [dic setObject:[rs stringForColumn:@"lon"] forKey:@"lon"];
+            
+            [locationData.nearStations addObject:dic];
+            
+        }
+        [rs close];
+        [db close];
+        
+        //取得した駅のアノテーションを追加
+        for(int i = 0; i < [locationData.nearStations count]; i++){
+            [mapView addAnnotation:
+             [[[CustomAnnotation alloc]initWithLocationCoordinate:CLLocationCoordinate2DMake
+               ([[[locationData.nearStations objectAtIndex:i] objectForKey:@"lat"] doubleValue],
+                [[[locationData.nearStations objectAtIndex:i] objectForKey:@"lon"] doubleValue])
+                                                            title:[[locationData.nearStations objectAtIndex:i] objectForKey:@"station_name"]
+                                                         subtitle:[[locationData.nearStations objectAtIndex:i] objectForKey:@"line_name"]
+               ]autorelease]];
+        }
+        
+        
+    }else{
+        NSLog(@"Could not open db.");
     }
 
+        
 }
-
-
-//リクエスト失敗時
-- (void)stationGetFailed:(ASIFormDataRequest*)request
-{
-    [SVProgressHUD dismiss];
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-    UIAlertView *notgetalert = [[UIAlertView alloc] initWithTitle:@"取得できませんでした。" message:@"もう一度取得しますか？" delegate:nil cancelButtonTitle:@"いいえ" otherButtonTitles:@"はい", nil];
-    notgetalert.tag = kTagAlert3;
-    [notgetalert show];
-    [notgetalert release];
-    NSLog(@"stationgetfailed");
-}
-
-
-
-
-/*
-//セッティングビューの設定
-- (IASKAppSettingsViewController*)appSettingsViewController {
-	if (!appSettingsViewController) {
-		appSettingsViewController = [[IASKAppSettingsViewController alloc] initWithNibName:@"IASKAppSettingsView" bundle:nil];
-		appSettingsViewController.delegate = self;
-	}
-	return appSettingsViewController;
-}
-
-
-//セッティングビューの表示
-- (IBAction)showSettingView:(id)sender {
-    UINavigationController *aNavController = [[UINavigationController alloc] initWithRootViewController:self.appSettingsViewController];
-    //[viewController setShowCreditsFooter:NO];   // Uncomment to not display InAppSettingsKit credits for creators.
-    // But we encourage you not to uncomment. Thank you!
-    self.appSettingsViewController.showDoneButton = YES;
-    [self presentModalViewController:aNavController animated:YES];
-    [aNavController release];
-}
-
-
-//セッティングビューを閉じたとき
-- (void)settingsViewControllerDidEnd:(IASKAppSettingsViewController*)sender {
-    [self dismissModalViewControllerAnimated:YES];
-    LocationData *locationData = [LocationData sharedCenter];
-    
-    NSUserDefaults* userDefaults = [NSUserDefaults standardUserDefaults];
-    locationData.account_name = [NSString stringWithFormat:@"%@",[userDefaults stringForKey: @"AccountName"]];
-}
-*/
-
-
 
 
 //DBへ接続する
@@ -736,66 +652,6 @@ static const NSInteger kTagAlert5 = 5; //ポスト失敗アラート
     [db executeUpdate:sql, [NSString stringWithFormat:@"%f", locationData.from_lat],[NSString stringWithFormat:@"%f", locationData.from_lon],[NSString stringWithFormat:@"%f", locationData.to_lat],[NSString stringWithFormat:@"%f", locationData.to_lon],locationData.from_name,locationData.to_name,locationData.from_date,locationData.to_date,fileName,str];
     [db close];
 }
-
-
-
-
-//------------------------------------------------サーバーを使う場合はコメントアウト----------------------------------------------------------------
-/*
- //ユーザの位置情報、録音情報を送信
- -(void)postUserLocation{
- [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
- LocationData *locationData = [LocationData sharedCenter];
- NSURL *url = [NSURL URLWithString:@"http://wired.cyber.t.u-tokyo.ac.jp/~ueta/InsertRecordInformation.php"];
- ASIFormDataRequest *request = [[ASIFormDataRequest alloc] initWithURL:url];
- [request setPostValue:[NSString stringWithFormat:@"%f", locationData.from_lat] forKey:@"from_lat"];
- [request setPostValue:[NSString stringWithFormat:@"%f", locationData.from_lon] forKey:@"from_lon"];
- [request setPostValue:[NSString stringWithFormat:@"%f", locationData.to_lat] forKey:@"to_lat"];
- [request setPostValue:[NSString stringWithFormat:@"%f", locationData.to_lon] forKey:@"to_lon"];
- [request setPostValue:locationData.from_name forKey:@"from_name"];
- [request setPostValue:locationData.to_name forKey:@"to_name"];
- [request setPostValue:locationData.from_date forKey:@"from_date"];
- [request setPostValue:locationData.to_date forKey:@"to_date"];
- [request setPostValue:fileName forKey:@"file_name"];
- [request setPostValue:locationData.account_name forKey:@"account_name"];
- 
- [request setTimeOutSeconds:30];
- [request setDelegate:self];
- [request setDidFinishSelector:@selector(postUserLocationSucceeded:)];
- [request setDidFailSelector:@selector(postUserLocationFailed:)];
- [request setDefaultResponseEncoding:NSUTF8StringEncoding];
- [request startAsynchronous];
- [SVProgressHUD showWithStatus:@"サーバにアップロード中..."];
- }
- 
- 
- //リクエスト成功時
- - (void)postUserLocationSucceeded:(ASIFormDataRequest*)request
- {
- [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
- [SVProgressHUD dismiss];
- UIAlertView *postdidalert = [[UIAlertView alloc] initWithTitle:nil message:@"アップロード成功" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
- postdidalert.tag = kTagAlert4;
- [postdidalert show];
- [postdidalert release];
- NSLog(@"postUserLocationSuceeded");
- 
- }
- 
- //リクエスト失敗時
- - (void)postUserLocationFailed:(ASIFormDataRequest*)request
- {
- [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
- [SVProgressHUD dismiss];
- UIAlertView *postfailedalert = [[UIAlertView alloc] initWithTitle:@"サーバーへのアップロードに失敗しました。" message:@"もう一度アップロードに挑戦しますか？" delegate:nil cancelButtonTitle:@"いいえ" otherButtonTitles:@"はい", nil];
- postfailedalert.tag = kTagAlert5;
- 
- [postfailedalert show];
- [postfailedalert release];
- NSLog(@"postUserLocationFailed");
- }
- */
-
 
 
 
